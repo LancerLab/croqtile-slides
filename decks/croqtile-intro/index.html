@@ -173,13 +173,15 @@
     <h4 class="agg-subtitle">We operate on data blocks, not raw buffers</h4>
     <div class="website-split">
       <div class="claims">
-        <div class="claim-item"><span class="claim-icon">&#x1F9CA;</span><span>CroqTile: <strong>shape + coord</strong> — the complete tensor declaration</span></div>
-        <div class="claim-item"><span class="claim-icon">&#x1F500;</span><span>CuTe requires <strong>Layout = Shape + Stride</strong> — compose hierarchical layouts manually</span></div>
-        <div class="claim-item"><span class="claim-icon">&#x1F4CC;</span><span>Triton: <strong>pointer + shape + stride + offset</strong> per tensor via <code>make_block_ptr</code></span></div>
+        <div class="claim-item"><span>CroqTile: <strong>shape + coord</strong> is the complete tensor interface &mdash; nothing else exposed</span></div>
+        <div class="claim-sub"><span>Triton: <strong>pointer + shape + stride + offset</strong> per tensor via <code>make_block_ptr</code></span></div>
+        <div class="claim-sub"><span>CuTe: <strong>Layout = Shape + Stride</strong> &mdash; compose hierarchical layouts manually</span></div>
+        <div class="claim-sub"><span>CUDA: raw pointer + manual index arithmetic at every access</span></div>
         <table class="check-table">
           <thead><tr><th>Exposed to user</th><th>Croqtile</th><th>Triton</th><th>TileLang</th><th>CuTe</th><th>CUDA</th></tr></thead>
           <tbody>
             <tr><td>Shape</td><td class="check-yes">&#x2713;</td><td class="check-yes">&#x2713;</td><td class="check-yes">&#x2713;</td><td class="check-yes">&#x2713;</td><td class="check-yes">&#x2713;</td></tr>
+            <tr><td>Coord</td><td class="check-yes">&#x2713;</td><td class="check-yes">&#x2713;</td><td class="check-yes">&#x2713;</td><td class="check-yes">&#x2713;</td><td class="check-yes">&#x2713;</td></tr>
             <tr><td>Stride</td><td class="check-no">&mdash;</td><td class="check-yes">&#x2713;</td><td class="check-no">&mdash;</td><td class="check-yes">&#x2713;</td><td class="check-yes">&#x2713;</td></tr>
             <tr><td>Layout</td><td class="check-no">&mdash;</td><td class="check-no">&mdash;</td><td class="check-no">&mdash;</td><td class="check-yes">&#x2713;</td><td class="check-no">&mdash;</td></tr>
             <tr><td>Offset</td><td class="check-no">&mdash;</td><td class="check-yes">&#x2713;</td><td class="check-no">&mdash;</td><td class="check-no">&mdash;</td><td class="check-yes">&#x2713;</td></tr>
@@ -203,15 +205,10 @@
     <h4 class="agg-subtitle">Data movement is one line &mdash; hardware details are hidden</h4>
     <div class="website-split">
       <div class="claims">
-        <div class="claim-item"><span class="claim-icon">&#x1F680;</span><span>One-liner TMA/DMA: <code>tma.copy.swiz&lt;128&gt; src =&gt; dst</code></span></div>
-        <div class="claim-sub"><span>CroqTile: <strong>op + shape + coord</strong> — one line copies a tile</span></div>
-        <div class="claim-sub"><span>Triton: manual <strong>pointer arithmetic + stride offsets + mask</strong></span></div>
-        <div class="claim-sub"><span>CUDA: raw <strong>ptr[row * K + col]</strong> — manual offset at every load/store</span></div>
-        <div class="claim-item"><span class="claim-icon">&#x2699;</span><span><strong>Zero boilerplate</strong> — compiler handles all TMA setup</span></div>
-        <div class="claim-sub"><span>No manual <code>CUtensorMap</code> descriptor (128 bytes, 10+ fields in CUDA)</span></div>
-        <div class="claim-sub"><span>No host-side <code>cuTensorMapEncodeTiled</code> + device transfer</span></div>
-        <div class="claim-sub"><span>No unit mismatches (CUDA mixes elements vs. bytes in dims/strides)</span></div>
-        <div class="claim-item"><span class="claim-icon">&#x26A1;</span><span><strong>One-site switch</strong> for optimization patterns</span></div>
+        <div class="claim-item"><span>One-line TMA/DMA: <code>tma.copy.swiz&lt;128&gt; src =&gt; dst</code> &mdash; load or store a tile</span></div>
+        <div class="claim-sub"><span>Compiler generates TMA descriptor setup (128 bytes, 10+ fields in CUDA)</span></div>
+        <div class="claim-sub"><span>No manual <code>CUtensorMap</code> creation, no host-side <code>cuTensorMapEncodeTiled</code></span></div>
+        <div class="claim-item"><span><strong>Zero boilerplate</strong> &mdash; optimization via modifiers, not code rewrites</span></div>
         <div class="claim-sub"><span>Swizzle, cache promotion, zfill, async pipeline &mdash; all one keyword</span></div>
         <p class="loc-hchart-title">Lines of code — TMA load + store</p>
         <div class="loc-hchart">
@@ -238,9 +235,9 @@
     <h4 class="agg-subtitle">One semantic for all tensor core instructions &mdash; compiler picks the best</h4>
     <div class="website-split">
       <div class="claims">
-        <div class="claim-item"><span class="claim-icon">&#x1F9E9;</span><span>Complete MMA cycle in <strong>5 lines</strong>: fill, load&times;2, compute, store</span></div>
-        <div class="claim-item"><span class="claim-icon">&#x1F6E1;</span><span>Encapsulates <strong>WGMMA descriptor</strong> — no manual register layout or fence</span></div>
-        <div class="claim-item"><span class="claim-icon">&#x1F3AF;</span><span><strong>Compile-time dispatch</strong>: HMMA (SM70/80) vs WGMMA (SM90) — zero runtime overhead</span></div>
+        <div class="claim-item"><span>Complete MMA cycle in <strong>5 lines</strong>: fill, load&times;2, compute, store</span></div>
+        <div class="claim-sub"><span>Encapsulates WGMMA descriptor &mdash; no manual register layout or fence</span></div>
+        <div class="claim-sub"><span><strong>Compile-time dispatch</strong>: HMMA (SM70/80) vs WGMMA (SM90) &mdash; zero runtime overhead</span></div>
         <p class="loc-hchart-title">Lines of code — MMA operations</p>
         <div class="loc-hchart">
           <div class="loc-hbar-row"><span class="loc-hbar-label">Triton</span><div class="loc-hbar triton" style="width:12%"><span class="loc-hbar-value">3 L</span></div></div>
@@ -255,7 +252,7 @@
           {"file":"Croqtile","badge":"CROQTILE","label":"5-line MMA cycle","lang":"choreo","code":"mc = mma.fill.f16 0.0f;\n\nma = mma.load.swiz<128>\n  lhs_s.chunkat(_, iv);\nmb = mma.load.swiz<128>\n  rhs_s.chunkat(_, iv);\n\nmma.row.row mc, ma, mb;\n\nmma.store mc, output_s;"},
           {"file":"Triton","badge":"","label":"tl.dot — 3 LOC","lang":"python","code":"acc = tl.zeros((BLOCK_M, BLOCK_N),\n    dtype=tl.float32)\nfor k in range(0, tl.cdiv(K, BLOCK_K)):\n    a = tl.load(a_ptrs, mask=...)\n    b = tl.load(b_ptrs, mask=...)\n    acc = tl.dot(a, b, acc)"},
           {"file":"TileLang","badge":"","label":"T.gemm — 3 LOC","lang":"python","code":"# Fragment allocation\nC_local = T.alloc_fragment(\n    (block_M, block_N), accum_dtype)\nT.clear(C_local)\n\nfor idx in T.Pipelined(\n        T.ceildiv(K, block_K),\n        num_stages=3):\n    T.copy(A[by*block_M, idx*block_K],\n           A_shared)\n    T.copy(B[idx*block_K, bx*block_N],\n           B_shared)\n    # Single MMA call\n    T.gemm(A_shared, B_shared, C_local)\n\nT.copy(C_local,\n    C[by * block_M, bx * block_N])"},
-          {"file":"CuTe / CUTLASS","badge":"","label":"TiledMMA + partition — 15 LOC","lang":"cpp","code":"// MMA atom setup\nusing MMA = decltype(make_tiled_mma(\n    SM90_16x8x16_F16F16F16F16_TN{}));\nTiledMMA tiled_mma;\nauto thr_mma = tiled_mma.get_slice(\n    threadIdx.x);\n\n// Partition fragments\nTensor tCrA =\n    thr_mma.partition_fragment_A(\n        sA(_, _, 0));\nTensor tCrB =\n    thr_mma.partition_fragment_B(\n        sB(_, _, 0));\nTensor tCrC =\n    thr_mma.partition_fragment_C(gC);\nclear(tCrC);\n\n// K-loop with copy + MMA\nfor (int k = 0; k < K_TILES; ++k) {\n    copy(sA(_, _, k), tCrA);\n    copy(sB(_, _, k), tCrB);\n    gemm(tiled_mma, tCrC, tCrA, tCrB,\n         tCrC);\n}"},
+          {"file":"CuTe / CUTLASS","badge":"","label":"TiledMMA + partition — 15 LOC","lang":"cpp","code":"// MMA atom setup\nusing MMA = decltype(make_tiled_mma(\n    SM80_16x8x16_F16F16F16F16_TN{}));\nTiledMMA tiled_mma;\nauto thr_mma = tiled_mma.get_slice(\n    threadIdx.x);\n\n// Partition fragments\nTensor tCrA =\n    thr_mma.partition_fragment_A(\n        sA(_, _, 0));\nTensor tCrB =\n    thr_mma.partition_fragment_B(\n        sB(_, _, 0));\nTensor tCrC =\n    thr_mma.partition_fragment_C(gC);\nclear(tCrC);\n\n// K-loop with copy + MMA\nfor (int k = 0; k < K_TILES; ++k) {\n    copy(sA(_, _, k), tCrA);\n    copy(sB(_, _, k), tCrB);\n    gemm(tiled_mma, tCrA, tCrB, tCrC);\n}"},
           {"file":"CUDA","badge":"","label":"WGMMA descriptor + async — 25 LOC","lang":"cpp","code":"uint64_t desc_a = make_smem_desc(\n    cast_smem_ptr_to_uint(sA_ptr));\ndesc_a |= matrix_descriptor_encode(\n    stride_bytes_a, leading_offset_a,\n    strideDimension_a);\nuint32_t frag_c[4] = {0,0,0,0};\nasm volatile(\n    \"wgmma.mma_async.sync.aligned\"\n    \".m64n64k16.f16.f16.f16 \"\n    \"{%0,%1,%2,%3}, %4, %5, 0;\"\n    : \"+r\"(frag_c[0]), \"+r\"(frag_c[1]),\n      \"+r\"(frag_c[2]), \"+r\"(frag_c[3])\n    : \"l\"(desc_a), \"l\"(desc_b));"}
         ]'></div>
       </div>
@@ -266,9 +263,9 @@
     <h4 class="agg-subtitle">Sparsity is a modifier, not a rewrite &mdash; add <code>.sp</code> and you&rsquo;re done</h4>
     <div class="website-split">
       <div class="claims">
-        <div class="claim-item"><span class="claim-icon">&#x1F9F2;</span><span><code>mma.row.row.sp</code> — single modifier adds <strong>2:4 structured sparsity</strong></span></div>
-        <div class="claim-item"><span class="claim-icon">&#x1F4E5;</span><span>Metadata <strong>prepack + warp shuffle</strong> handled implicitly by compiler</span></div>
-        <div class="claim-item"><span class="claim-icon">&#x1F517;</span><span>Triton: <strong>NOT supported</strong> at all. CUDA: 30 LOC metadata handling</span></div>
+        <div class="claim-item"><span><code>mma.row.row.sp</code> &mdash; single modifier adds <strong>2:4 structured sparsity</strong></span></div>
+        <div class="claim-sub"><span>Metadata prepack + warp shuffle handled implicitly by compiler</span></div>
+        <div class="claim-sub"><span>Triton: <strong>not supported</strong>. CUDA: 30 LOC metadata handling</span></div>
         <p class="loc-hchart-title">Lines of code — metadata handling only</p>
         <div class="loc-hchart">
           <div class="loc-hbar-row"><span class="loc-hbar-label">Croqtile</span><div class="loc-hbar croqtile" style="width:3%"><span class="loc-hbar-value">1 L</span></div></div>
@@ -281,7 +278,7 @@
       <div>
         <div class="editor-showcase" data-tabs='[
           {"file":"Croqtile","badge":"CROQTILE","label":"mma.row.row.sp — 1 modifier","lang":"choreo","code":"// Dense MMA (for reference)\nmma.row.row mc, ma, mb;\n\n// Sparse MMA — just add .sp\nme = mma.load.swiz<128>\n  meta_s.chunkat(_, iv);\nmma.row.row.sp mc, ma, mb, me;\n\n// Compiler handles everything:\n//   prepack, shuffle, interleave"},
-          {"file":"TileLang","badge":"","label":"T.gemm_sp — 3 LOC","lang":"python","code":"T.copy(E[by*block_M,\n         idx*block_K // 8],\n       E_shared)\nT.gemm_sp(\n    A_shared, B_shared,\n    C_local, E_shared)"},
+          {"file":"TileLang","badge":"","label":"T.gemm_sp — 3 LOC","lang":"python","code":"T.copy(E[by*block_M,\n         ko*block_K // 8],\n       E_shared)\nT.gemm_sp(\n    A_shared, E_shared,\n    B_shared, C_local)"},
           {"file":"CuTe / CUTLASS","badge":"","label":"SparseMma + metadata layout — 15 LOC","lang":"cpp","code":"// Sparse MMA atom\nusing SparseMMA = SparseMma<\n    SM80_16x8x32_F16F16F16F16_TN,\n    MMAOp_WarpSize,\n    ElementA, LayoutA_MK,\n    ElementB, LayoutB_NK,\n    ElementE, LayoutE_MK>;\n\n// Metadata layout (interleaved)\nusing LayoutE = Layout<\n    Shape<Int<M/16>, Int<K/32>, Int<2>>,\n    Stride<Int<K/16>, _1,\n           Int<M*K/32>>>;\n\n// Metadata tensor\nTensor mE = make_tensor(\n    make_gmem_ptr(E_ptr), LayoutE{});\nauto tCrE =\n    thr_mma.partition_fragment_E(mE);\n\n// Copy metadata to registers\ncopy(gE(_, _, k), tCrE);\n\n// Sparse GEMM call\ngemm(sparse_mma, tCrC, tCrA, tCrB,\n     tCrC, tCrE);"},
           {"file":"CUDA","badge":"","label":"metadata prepack + shuffle — 30 LOC","lang":"cpp","code":"void prepack_metadata(\n    uint16_t* E_packed,\n    const uint16_t* E_raw, int M, int K) {\n  for (int m = 0; m < M; m += 16)\n    for (int k = 0; k < K/2; k += 16) {\n      int dst_row = m / 16;\n      int interleaved = dst_row * 2\n          + (k / 16 % 2);\n      E_packed[interleaved * (K/32)\n          + k / 32] = E_raw[m*(K/32)+k/16];\n    }\n}\nuint32_t meta = __shfl_sync(0xFFFFFFFF,\n    meta, (lane_id%4)*8+(lane_id/4), 32);\nasm volatile(\"mma.sp.sync.aligned...\");"}
         ]'></div>
@@ -293,9 +290,9 @@
     <h4 class="agg-subtitle">One keyword for all parallelism &mdash; block, warp-group, thread, multi-device</h4>
     <div class="website-split">
       <div class="claims">
-        <div class="claim-item"><span class="claim-icon">&#x1F310;</span><span>Unified <code>parallel-by</code> — <strong>one keyword</strong> for all parallelism levels</span></div>
-        <div class="claim-item"><span class="claim-icon">&#x1F4BB;</span><span>Level specifiers (<code>block</code>, <code>group-4</code>, <code>thread</code>) map to GPU &amp; DSA</span></div>
-        <div class="claim-item"><span class="claim-icon">&#x1F504;</span><span>Same code targets <strong>NVIDIA, AMD, and custom DSA</strong></span></div>
+        <div class="claim-item"><span>Unified <code>parallel-by</code> &mdash; <strong>one keyword</strong> for all parallelism levels</span></div>
+        <div class="claim-sub"><span>Level specifiers (<code>block</code>, <code>group-4</code>, <code>thread</code>) map to GPU &amp; DSA hardware</span></div>
+        <div class="claim-sub"><span>Same code targets NVIDIA, AMD, and custom accelerators</span></div>
         <p class="loc-hchart-title">Parallelism primitives needed</p>
         <div class="loc-hchart">
           <div class="loc-hbar-row"><span class="loc-hbar-label">Croqtile</span><div class="loc-hbar croqtile" style="width:25%"><span class="loc-hbar-value">2</span></div></div>
@@ -309,7 +306,7 @@
         <div class="editor-showcase" data-tabs='[
           {"file":"Croqtile","badge":"CROQTILE","label":"parallel-by — 2 primitives","lang":"choreo","code":"parallel {bm, bn}\n  by [cdiv(M, WARP_M),\n      cdiv(N, WARP_N)] : block {\n\n  parallel p by 1 : group-4 {\n    mma.row.row mc, ma, mb;\n  }\n\n  parallel {m, n}\n    by [WARP_M, 2] : thread { ... }\n}\n\nparallel p1 by 2 : group-4 {\n  inthreads.async (p1 == 0) { /*TMA*/ }\n  inthreads.async (p1 == 1) { /*MMA*/ }\n}"},
           {"file":"Triton","badge":"","label":"5 primitives","lang":"python","code":"pid = tl.program_id(axis=0)\nnum_pids = tl.num_programs(axis=0)\n# + grid launch (host)\n# + num_warps config\n# + cooperative_groups (limited)\n# No warp-group or thread-level\n# No multi-device support"},
-          {"file":"TileLang","badge":"","label":"4 primitives","lang":"python","code":"@T.prim_func\ndef main(A: T.Tensor(...), ...):\n  # 1. T.Kernel — grid launch\n  with T.Kernel(\n      T.ceildiv(N, block_N),\n      T.ceildiv(M, block_M),\n      threads=128) as (bx, by):\n\n    # 2. T.Parallel — block iteration\n    for i in T.Parallel(block_M):\n        C_local[i] = 0\n\n    # 3. T.Pipelined — staged pipeline\n    for k in T.Pipelined(\n        T.ceildiv(K, block_K),\n        num_stages=3):\n      T.copy(A[...], A_shared)\n      T.gemm(A_shared, B_shared, C_local)\n\n    # 4. T.WarpSpecialize (advanced)\n    with T.WarpSpecialize() as ws:\n      with ws.body(0): # producer\n        T.copy(A[...], A_shared)\n      with ws.body(1): # consumer\n        T.gemm(...)"},
+          {"file":"TileLang","badge":"","label":"4 primitives","lang":"python","code":"@T.prim_func\ndef main(A: T.Tensor(...), ...):\n  # 1. T.Kernel — grid launch\n  with T.Kernel(\n      T.ceildiv(N, block_N),\n      T.ceildiv(M, block_M),\n      threads=128) as (bx, by):\n\n    # 2. T.Parallel — block iteration\n    for i in T.Parallel(block_M):\n        C_local[i] = 0\n\n    # 3. T.Pipelined — staged pipeline\n    for k in T.Pipelined(\n        T.ceildiv(K, block_K),\n        num_stages=3):\n      T.copy(A[...], A_shared)\n      T.gemm(A_shared, B_shared, C_local)\n\n    # 4. T.ws — warp specialization\n    with T.ws(0): # producer\n      T.copy(A[...], A_shared)\n    with T.ws(1): # consumer\n      T.gemm(...)"},
           {"file":"CuTe / CUTLASS","badge":"","label":"6 primitives","lang":"cpp","code":"template <class TiledMMA>\n__global__ void kernel(...) {\n  // 1. blockIdx — CTA identity\n  auto cta = make_coord(\n      blockIdx.x, blockIdx.y, _);\n\n  // 2. threadIdx — thread identity\n  auto thr_mma =\n      tiled_mma.get_slice(threadIdx.x);\n\n  // 3. TiledMMA::get_slice —\n  //    partitions work across threads\n  Tensor tCrA =\n      thr_mma.partition_fragment_A(gA);\n\n  // 4. __syncthreads — barriers\n  __syncthreads();\n\n  // 5. Pipeline — async scheduling\n  auto pipeline =\n      make_pipeline(params);\n  pipeline.producer_acquire();\n\n  // 6. Cluster (SM90)\n  // cute::cluster_arrive_relaxed();\n}"},
           {"file":"CUDA","badge":"","label":"8 primitives","lang":"cpp","code":"int bx = blockIdx.x;\nint tx = threadIdx.x;\nint threads = blockDim.x * blockDim.y;\n__syncthreads();\nauto grid = cg::this_grid();\nauto block = cg::this_thread_block();\nauto warp = cg::tiled_partition<32>(block);\n// + kernel<<<grid,block,smem,stream>>>"}
         ]'></div>
@@ -319,12 +316,25 @@
   <!-- TAB 6: Patterns -->
   <div class="agg-panel" id="agg-patterns">
     <h4 class="agg-subtitle">Every optimization pattern is a first-class construct &mdash; zero boilerplate</h4>
+    <div class="website-split">
+      <div class="claims">
+        <div class="claim-item"><span>Each pattern is <strong>1&ndash;3 change sites</strong> &mdash; structural changes localized</span></div>
+        <div class="claim-sub"><span>Persistent kernel: change <code>parallel</code> binding + add tile loop</span></div>
+        <div class="claim-sub"><span>Warp spec: wrap in <code>inthreads.async</code> &mdash; inner code unchanged</span></div>
+        <div class="claim-sub"><span>Pipeline: add <code>shared event</code> + <code>wait</code>/<code>trigger</code></span></div>
+        <div class="claim-item"><span>Minimal change sites &rarr; easy for both humans and AI to apply</span></div>
+        <div class="claim-sub"><span>AI can iterate 68 times in one session (see AI-Tuning slides)</span></div>
+        <div class="claim-sub"><span>Each optimization is additive, not a rewrite</span></div>
+      </div>
+      <div>
     <div class="editor-showcase editor-compact pattern-showcase" data-tabs='[
       {"file":"Persistent Kernel","badge":"PATTERN","label":"matmul_f16_dyn_persis_sta_sm90.co","lang":"choreo","code":"@@parallel block_id by NUM_SMS : block {@@\n  @@foreach {tile_iter} in [cdiv(total_tiles, NUM_SMS)] {@@\n    @@tile_id = tile_iter # block_id;@@\n    @@if (tile_id < total_tiles) {@@\n      @@block_m = tile_id / cdiv(N, WARP_N);@@\n      mc = mma.fill.f16 0.0f;\n      foreach {iv_k} in [cdiv(K, TILE_K)] {\n        tma.copy.swiz<SWIZ> lhs...at(block_m, iv_k) => lhs_load_s;\n        ...\n      }\n      mma.store mc, output_s;\n    }\n  }\n}"},
       {"file":"Producer-Consumer","badge":"PATTERN","label":"warp specialization","lang":"choreo","code":"@@parallel p1 by 3 : group-4 {@@\n  @@inthreads.async (p1 == 0) {@@\n    @@// PRODUCER: TMA loads@@\n    foreach {iv_k} in [cdiv(K, TILE_K)] {\n      wait empty[stage];\n      tma.copy.async<full[stage]>.swiz<SWIZ> lhs...;\n      trigger full[stage];\n    }\n  }\n  @@inthreads.async (p1 > 0) {@@\n    @@// CONSUMERS: MMA compute@@\n    wait full[stage];\n    mma.row.row mc, ma, mb;\n    trigger empty[stage];\n  }\n}"},
       {"file":"Pipeline (Staging)","badge":"PATTERN","label":"staged events","lang":"choreo","code":"@@shared event full[STAGES], empty[STAGES];@@\nforeach {iv_k} in [cdiv(K, TILE_K)] {\n  @@stage = iv_k % STAGES;@@\n  @@wait empty[stage];@@\n  tma.copy.async<@@full[stage]@@>.swiz<SWIZ> ...;\n  @@trigger full[stage];@@\n}"},
       {"file":"Double Buffering","badge":"PATTERN","label":"swap / rotate","lang":"choreo","code":"@@fl0 = dma.copy.async lhs => shared;@@\n@@fl1 = dma.any;@@\nforeach k(1:) {\n  @@fl1 = dma.copy.async lhs => shared;@@\n  wait fl0; mma.row.col mc, ma, mb;\n  @@swap(fl0, fl1);@@\n}\n// Triple buffering:\n@@rotate(fa, fb, fc);@@"},{"file":"Tiling","badge":"PATTERN","label":"matmul_f16_dyn_persis_sta_sm90.co","lang":"choreo","code":"@@#define WARP_M 64@@\n@@#define WARP_N 128@@\n@@#define TILE_K 64@@\n@@#define WARP_K 16@@\n\n__co__ void matmul(global f16 [M, K] lhs,\n    global f16 [N, K] rhs, global f16 [M, N] output) {\n  int total = @@cdiv(M, WARP_M) * cdiv(N, WARP_N)@@;\n  parallel block_id by NUM_SMS : block {\n    shared f16 [@@WARP_M@@, @@TILE_K@@] lhs_load_s;\n    shared f16 [@@WARP_N@@, @@TILE_K@@] rhs_load_s;\n    shared f16 [@@WARP_M@@, @@WARP_N@@] output_s;\n    foreach {tile_iter} in [cdiv(total, NUM_SMS)] {\n      ...\n      foreach {iv_k} in [@@cdiv(K, TILE_K)@@] {\n        tma.copy.swiz<SWIZ>\n          lhs.@@subspan(WARP_M, TILE_K)@@\n            .step(@@WARP_M@@, @@TILE_K@@).at(block_m, iv_k)\n              => lhs_load_s;\n        foreach {iv_warp} in [@@cdiv(TILE_K, WARP_K)@@] {\n          parallel p by 1 : group-4 {\n            ma = mma.load.swiz<SWIZ>\n              lhs_load_s.@@chunkat@@(_, iv_warp);\n            mb = mma.load.swiz<SWIZ>\n              rhs_load_s.@@chunkat@@(_, iv_warp);\n            mma.row.row mc, ma, mb;\n          }\n        }\n      }\n    }\n  }\n}"},{"file":"Swizzle","badge":"PATTERN","label":"matmul + blockscale_gemm + gemm_sp","lang":"choreo","code":"#define SWIZ 128\n\n// TMA copy with swizzle mode\ntma.copy@@.swiz<128>@@\n  lhs.subspan(WARP_M, TILE_K).at(bm, iv_k)\n    => lhs_load_s;\n\ntma.copy@@.swiz<SWIZ>@@\n  rhs.subspan(WARP_N, TILE_K).at(bn, iv_k)\n    => rhs_load_s;\n\n// Async TMA with staged events + swizzle\ntma.copy.async<full[stage]>@@.swiz<SWIZ>@@\n  lhs.subspan(TILE_M, TILE_K).at(block_m, iv_k)\n    => lhs_load_s.subspan(...).at(stage, 0);\n\n// MMA load with swizzle\nma = mma.load@@.swiz<128>@@\n  lhs_load_s.chunkat(_, iv_warp);\nmb = mma.load@@.swiz<SWIZ>@@\n  rhs_load_s.chunkat(_, iv_warp);\n\n// Sparse MMA also uses swizzle\nlhs_load_s = tma.copy@@.swiz<64>@@\n  lhs_packed.chunkat(block_m, iv_k) => shared;\nrhs_load_s = tma.copy@@.swiz<128>@@\n  rhs.chunkat(block_n, iv_k) => shared;"}
     ]'></div>
+      </div>
+    </div>
   </div>
   <style>
     .agg-tabs{display:flex;gap:6px;margin-bottom:10px;padding:5px;background:#eef1ef;border-radius:12px;}
@@ -337,7 +347,8 @@
     #why-simple .agg-subtitle{margin:0 0 8px 0;font-size:0.88em;font-weight:700;color:var(--accent) !important;letter-spacing:0.01em;text-transform:none !important;border-bottom:2px solid var(--accent);padding-bottom:4px;display:inline-block;}
     #why-simple .website-split{grid-template-columns:0.9fr 1.1fr;gap:16px;}
     #why-simple .claims{font-size:0.68em;}
-    #why-simple .claim-item{padding:3px 0;}
+    #why-simple .claim-item{padding:3px 0;padding-left:16px;position:relative;}
+    #why-simple .claim-item::before{content:"•";position:absolute;left:0;color:var(--accent);font-weight:700;}
     #why-simple .claim-sub{padding:1px 0 1px 36px;font-size:0.85em;color:#666;position:relative;}
     #why-simple .claim-sub::before{content:"–";position:absolute;left:22px;color:#aaa;}
     #why-simple .check-table{font-size:0.85em;margin-top:4px;}
@@ -487,377 +498,7 @@
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════════════ -->
-<!-- SLIDE 6: Tensor Abstraction Comparison                 -->
-<!-- ═══════════════════════════════════════════════════════ -->
-<section class="dense">
-  <div class="slide-header">
-    <img src="../../assets/images/logo%202%20new.png" alt="">
-    <span class="header-title">CroqTile</span>
-    <span class="header-sep">|</span>
-    <span class="header-section">Chapter 1 — Simplicity + Performance</span>
-  </div>
-  <div class="slide-footer">
-    <span class="footer-brand">CroqTile — The Next-Gen GPU &amp; DSA Language</span>
-    <span class="footer-right">github.com/croqtile</span>
-  </div>
-  <h2>Work on Tensors, Not Buffers</h2>
-  <div class="website-split">
-    <div class="claims">
-      <div class="claim-item">
-        <span class="claim-icon">🧊</span>
-        <span>CroqTile: <strong>memory-specifier + dtype + shape</strong> is the complete tensor declaration — nothing else needed</span>
-      </div>
-      <div class="claim-item">
-        <span class="claim-icon">📏</span>
-        <span>The most intuitive abstraction: a tensor IS its <strong>shape</strong>. No strides, layouts, or offsets to reason about</span>
-      </div>
-      <div class="claim-item">
-        <span class="claim-icon">🔀</span>
-        <span>CuTe requires <strong>Layout = Shape + Stride</strong> — you must compose hierarchical layouts manually</span>
-      </div>
-      <div class="claim-item">
-        <span class="claim-icon">📌</span>
-        <span>Triton requires <strong>pointer + shape + stride + offset</strong> per tensor via <code>make_block_ptr</code></span>
-      </div>
-      <div class="claim-item">
-        <span class="claim-icon">📦</span>
-        <span>TileLang: <strong>shape + dtype</strong> — simpler than Triton, but still needs explicit <code>alloc_shared</code>/<code>alloc_fragment</code></span>
-      </div>
-      <!-- Check table -->
-      <table class="check-table">
-        <thead><tr><th>Exposed to user</th><th>Croqtile</th><th>Triton</th><th>TileLang</th><th>CuTe</th><th>CUDA</th></tr></thead>
-        <tbody>
-          <tr><td>Shape</td><td class="check-yes">✓</td><td class="check-yes">✓</td><td class="check-yes">✓</td><td class="check-yes">✓</td><td class="check-yes">✓</td></tr>
-          <tr><td>Stride</td><td class="check-no">—</td><td class="check-yes">✓</td><td class="check-no">—</td><td class="check-yes">✓</td><td class="check-yes">✓</td></tr>
-          <tr><td>Layout</td><td class="check-no">—</td><td class="check-no">—</td><td class="check-no">—</td><td class="check-yes">✓</td><td class="check-no">—</td></tr>
-          <tr><td>Offset</td><td class="check-no">—</td><td class="check-yes">✓</td><td class="check-no">—</td><td class="check-no">—</td><td class="check-yes">✓</td></tr>
-          <tr><td>Raw pointer</td><td class="check-no">—</td><td class="check-yes">✓</td><td class="check-no">—</td><td class="check-yes">✓</td><td class="check-yes">✓</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div>
-      <div class="editor-showcase" data-tabs='[
-        {"file":"Croqtile","badge":"CROQTILE","label":"memory-specifier + dtype + shape","lang":"choreo","code":"// Global tensors — just shape, dtype, memory space\n__co__ void matmul(\n    global f16 [M, K] lhs,\n    global f16 [N, K] rhs,\n    global f16 [M, N] output) {\n\n  // Shared memory — same syntax\n  shared f16 [WARP_M, TILE_K] lhs_s;\n  shared f16 [WARP_N, TILE_K] rhs_s;\n\n  // Batched tensors — add a dimension\n  // global bf16 [B, M, K] batched_lhs;\n\n  // Tiling is done via view operators\n  tma.copy.swiz<128>\n    lhs.subspan(WARP_M, TILE_K)\n      .at(bm, iv_k) => lhs_s;\n\n  // No strides, no offsets, no layouts\n  // No raw pointers anywhere\n}"},
-        {"file":"croqtile-python","badge":"PYTHON","label":"typed tensors + storage qualifiers","lang":"python","code":"import croq\n\n@croq.co\ndef matmul(lhs: croq.Global(croq.f16[128, 256]),\n           rhs: croq.Global(croq.f16[256, 256]),\n           output: croq.Global(croq.f16[128, 256])):\n\n    # Shared memory — declare with storage\n    lhs_s = croq.declare(\n        croq.f16[64, 64], \"lhs_s\",\n        storage=croq.SHARED)\n    rhs_s = croq.declare(\n        croq.f16[64, 64], \"rhs_s\",\n        storage=croq.SHARED)\n\n    # Type system: croq.f16[M, K]\n    # Storage: croq.GLOBAL, croq.SHARED, croq.LOCAL\n    # No strides, no offsets, no pointers\n\n    # Tiling via .subspan().at()\n    croq.tma.copy(\n        lhs.subspan(64, 64).at(bm, iv_k),\n        lhs_s, swizzle=128)"},
-        {"file":"Triton","badge":"","label":"pointer + shape + stride + offset","lang":"python","code":"@triton.jit\ndef kernel(a_ptr, b_ptr, c_ptr,\n    M, N, K,\n    stride_am, stride_ak,   # strides\n    stride_bk, stride_bn,\n    stride_cm, stride_cn,\n    BLOCK_M: tl.constexpr,\n    BLOCK_N: tl.constexpr,\n    BLOCK_K: tl.constexpr):\n    pid_m = tl.program_id(0)\n    pid_n = tl.program_id(1)\n    # manual offset computation\n    offs_am = pid_m * BLOCK_M\n        + tl.arange(0, BLOCK_M)\n    offs_bn = pid_n * BLOCK_N\n        + tl.arange(0, BLOCK_N)\n    offs_k = tl.arange(0, BLOCK_K)\n    # pointer arithmetic with strides\n    a_ptrs = a_ptr\n        + offs_am[:, None] * stride_am\n        + offs_k[None, :] * stride_ak\n    b_ptrs = b_ptr\n        + offs_k[:, None] * stride_bk\n        + offs_bn[None, :] * stride_bn\n    # OR: make_block_ptr requires all 4\n    # p = tl.make_block_ptr(\n    #   base, shape, strides,\n    #   offsets, block_shape, order)\n    acc = tl.zeros((BLOCK_M, BLOCK_N),\n        dtype=tl.float32)\n    for k in range(0, tl.cdiv(K, BLOCK_K)):\n        a = tl.load(a_ptrs, mask=...)\n        b = tl.load(b_ptrs, mask=...)\n        acc = tl.dot(a, b, acc)\n        a_ptrs += BLOCK_K * stride_ak\n        b_ptrs += BLOCK_K * stride_bk"},
-        {"file":"TileLang","badge":"","label":"shape + dtype + alloc","lang":"python","code":"@T.prim_func\ndef main(\n    A: T.Tensor((M, K), dtype),\n    B: T.Tensor((K, N), dtype),\n    C: T.Tensor((M, N), dtype),\n):\n  with T.Kernel(\n      T.ceildiv(N, block_N),\n      T.ceildiv(M, block_M),\n      threads=128) as (bx, by):\n    # explicit allocation per memory scope\n    A_shared = T.alloc_shared(\n        (block_M, block_K), dtype)\n    B_shared = T.alloc_shared(\n        (block_K, block_N), dtype)\n    C_local = T.alloc_fragment(\n        (block_M, block_N), accum_dtype)\n    # copy uses index offsets\n    T.copy(\n      A[by * block_M, idx * block_K],\n      A_shared)\n    T.gemm(A_shared, B_shared, C_local)\n    # no strides, but need manual\n    # alloc_shared / alloc_fragment calls"},
-        {"file":"CuTe / CUTLASS","badge":"","label":"pointer + Layout(Shape, Stride)","lang":"cpp","code":"using namespace cute;\n// Shape + Stride = Layout (required)\nauto layout_A = make_layout(\n    make_shape(M, K),\n    make_stride(K, Int<1>{}));\nauto layout_B = make_layout(\n    make_shape(N, K),\n    make_stride(K, Int<1>{}));\n\n// Tensor = pointer + Layout\nTensor mA = make_tensor(\n    make_gmem_ptr(ptr_A), layout_A);\nTensor mB = make_tensor(\n    make_gmem_ptr(ptr_B), layout_B);\n\n// CTA tiling needs more Layout ops\nauto cta_tiler = make_shape(\n    Int<BM>{}, Int<BN>{}, Int<BK>{});\nTensor gA = local_tile(mA, cta_tiler,\n    make_coord(blockIdx.x, _, _),\n    Step<_1, X, _1>{});\n\n// Shared memory also needs Layout\n__shared__ float smemA[BM * BK];\nTensor sA = make_tensor(\n    make_smem_ptr(smemA),\n    make_layout(\n      make_shape(BM, BK),\n      make_stride(BK, Int<1>{})));"},
-        {"file":"CUDA","badge":"","label":"raw pointer + manual offset","lang":"cpp","code":"__global__ void matmul(\n    float* A, float* B, float* C,\n    int M, int N, int K) {\n  // No tensor abstraction at all\n  // Everything is raw pointer arithmetic\n  int row = blockIdx.y * blockDim.y\n          + threadIdx.y;\n  int col = blockIdx.x * blockDim.x\n          + threadIdx.x;\n\n  // Manual shared memory\n  __shared__ float sA[TILE_M][TILE_K];\n  __shared__ float sB[TILE_K][TILE_N];\n\n  float sum = 0.0f;\n  for (int t = 0; t < K; t += TILE_K) {\n    // Manual offset: row * K + col\n    sA[threadIdx.y][threadIdx.x] =\n        A[row * K + (t + threadIdx.x)];\n    sB[threadIdx.y][threadIdx.x] =\n        B[(t + threadIdx.y) * N + col];\n    __syncthreads();\n    for (int i = 0; i < TILE_K; i++)\n      sum += sA[threadIdx.y][i]\n           * sB[i][threadIdx.x];\n    __syncthreads();\n  }\n  // Manual offset for store\n  C[row * N + col] = sum;\n}"}
-      ]'></div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════ -->
-<!-- SLIDE 7: TMA/DMA — website-split comparison            -->
-<!-- ═══════════════════════════════════════════════════════ -->
-<section class="dense">
-  <div class="slide-header">
-    <img src="../../assets/images/logo%202%20new.png" alt="">
-    <span class="header-title">CroqTile</span>
-    <span class="header-sep">|</span>
-    <span class="header-section">Chapter 1 — Simplicity + Performance</span>
-  </div>
-  <div class="slide-footer">
-    <span class="footer-brand">CroqTile — The Next-Gen GPU &amp; DSA Language</span>
-    <span class="footer-right">github.com/croqtile</span>
-  </div>
-  <h2>No Manual TMA/DMA Management</h2>
-  <div class="website-split">
-    <div class="claims">
-      <div class="claim-item">
-        <span class="claim-icon">&#x1F680;</span>
-        <span>One-liner TMA/DMA copy: <code>tma.copy.swiz&lt;128&gt; src =&gt; dst</code> — load and store in a single instruction</span>
-      </div>
-      <div class="claim-item">
-        <span class="claim-icon">&#x2699;</span>
-        <span>Automatic <strong>swizzle mode selection</strong> and barrier management — no manual <code>CUtensorMap</code> descriptor creation (30+ LOC in CUDA)</span>
-      </div>
-      <div class="claim-item">
-        <span class="claim-icon">&#x26A1;</span>
-        <span>Async pipeline with <strong>staged events</strong> handled implicitly — no <code>cp_async_fence</code> / <code>cp_async_wait</code> boilerplate</span>
-      </div>
-      <div class="claim-item">
-        <span class="claim-icon">&#x1F4E6;</span>
-        <span>DMA fallback for non-TMA hardware: <code>dma.copy</code> with identical syntax</span>
-      </div>
-      <p class="loc-hchart-title">Lines of code — TMA load + store operations</p>
-      <div class="loc-hchart">
-        <div class="loc-hbar-row"><span class="loc-hbar-label">Croqtile</span><div class="loc-hbar croqtile" style="width:6%"><span class="loc-hbar-value">2 L</span></div></div>
-        <div class="loc-hbar-row"><span class="loc-hbar-label">Croqtile-Python</span><div class="loc-hbar croqtile-python" style="width:11%"><span class="loc-hbar-value">4 L</span></div></div>
-        <div class="loc-hbar-row"><span class="loc-hbar-label">TileLang</span><div class="loc-hbar tilelang" style="width:11%"><span class="loc-hbar-value">4 L</span></div></div>
-        <div class="loc-hbar-row"><span class="loc-hbar-label">Triton</span><div class="loc-hbar triton" style="width:34%"><span class="loc-hbar-value">12 L</span></div></div>
-        <div class="loc-hbar-row"><span class="loc-hbar-label">CUTLASS</span><div class="loc-hbar cutlass" style="width:57%"><span class="loc-hbar-value">20 L</span></div></div>
-        <div class="loc-hbar-row"><span class="loc-hbar-label">CUDA</span><div class="loc-hbar cuda" style="width:100%"><span class="loc-hbar-value">35 L</span></div></div>
-      </div>
-    </div>
-    <div>
-      <div class="editor-showcase" data-tabs='[
-        {"file":"Croqtile","badge":"CROQTILE","label":"tma.copy / dma.copy — 2 LOC","lang":"choreo","code":"// TMA load: global -> shared (1 line)\ntma.copy.swiz<128>\n  lhs.subspan(WARP_M, TILE_K)\n    .at(bm, iv_k) => lhs_s;\n\n// TMA store: shared -> global (1 line)\ntma.copy out_s =>\n  output.subspan(WARP_M, WARP_N)\n    .at(bm, bn);\n\n// DMA fallback (identical syntax)\ndma.copy\n  lhs.subspan(WARP_M, TILE_K)\n    .at(bm, iv_k) => lhs_s;"},
-        {"file":"croqtile-python","badge":"PYTHON","label":"croq.tma / croq.dma — Pythonic","lang":"python","code":"import croq\n\n@croq.co\ndef copy_kernel(\n        input: croq.s32[6, 17, 64]) -> croq.s32[6, 17, 64]:\n    output = croq.declare(\n        croq.s32[6, 17, 64], \"output\")\n    for _ in croq.parallel(p=1, q=1):\n        # Async DMA copy: global -> shared\n        f = croq.dma.copy_async(\n            input, to=croq.SHARED, name=\"f\")\n        croq.wait(f)\n        # Copy back: shared -> output\n        croq.dma.copy(\n            f.data, to=output, name=\"g\")\n    return output\n\n# TMA variant (SM90+):\n# f = croq.tma.copy_async(\n#     src, to=lhs_s, swizzle=128)\n# croq.wait(f)\n# croq.tma.copy(out_s, to=output_ref)"},
-        {"file":"Triton","badge":"","label":"make_block_ptr + advance — 12 LOC","lang":"python","code":"# Block pointer setup (per tensor)\na_block_ptr = tl.make_block_ptr(\n    base=a_ptr,\n    shape=(M, K),\n    strides=(stride_am, stride_ak),\n    offsets=(pid_m * BLOCK_M, 0),\n    block_shape=(BLOCK_M, BLOCK_K),\n    order=(1, 0))\n\nfor k in range(0, tl.cdiv(K, BLOCK_K)):\n    a = tl.load(a_block_ptr,\n        boundary_check=(0, 1))\n    # ... compute ...\n    a_block_ptr = tl.advance(\n        a_block_ptr, (0, BLOCK_K))\n\n# Store also needs block_ptr + advance\nc_block_ptr = tl.make_block_ptr(\n    base=c_ptr,\n    shape=(M, N),\n    strides=(stride_cm, stride_cn),\n    offsets=(pid_m * BLOCK_M,\n            pid_n * BLOCK_N),\n    block_shape=(BLOCK_M, BLOCK_N),\n    order=(1, 0))\ntl.store(c_block_ptr, c,\n    boundary_check=(0, 1))"},
-        {"file":"TileLang","badge":"","label":"T.copy — 4 LOC","lang":"python","code":"# Copy global -> shared\nT.copy(\n    A[by * block_M, idx * block_K],\n    A_shared)\n\nT.copy(\n    B[idx * block_K, bx * block_N],\n    B_shared)\n\n# Copy local -> global (store)\nT.copy(\n    C_local,\n    C[by * block_M, bx * block_N])"},
-        {"file":"CuTe / CUTLASS","badge":"","label":"TMA descriptor + pipeline — 20 LOC","lang":"cpp","code":"// TMA descriptor creation (host side)\nauto tma_load_a = make_tma_copy(\n    SM90_TMA_LOAD{},\n    make_tensor(make_gmem_ptr(A),\n      make_layout(make_shape(M, K),\n        make_stride(K, Int<1>{}))),\n    SmemLayoutA{},\n    make_shape(Int<BM>{}, Int<BK>{}),\n    size<1>(ClusterShape{}));\n\n// Pipeline barrier setup\nPipelineParams params;\nparams.producer_arv_count = 1;\nparams.consumer_arv_count = NumMmaThreads;\nauto pipeline =\n    make_pipeline(params);\n\n// Async copy with barrier\ncopy(tma_load_a.with(\n       *pipeline.producer_acquire()),\n     gA(_, _, k), sA(_, _, k));\npipeline.producer_commit();"},
-        {"file":"CUDA","badge":"","label":"cuTensorMapEncodeTiled + barrier — 35 LOC","lang":"cpp","code":"// TMA descriptor creation (host side)\nuint64_t tma_shape[] = {K, M};\nuint64_t tma_strides[] = {K * sizeof(f16)};\nuint32_t tma_box[] = {TILE_K, WARP_M};\nuint32_t tma_elem_strides[] = {1, 1};\nalignas(64) CUtensorMap tma_map{};\ncuTensorMapEncodeTiled(\n    &tma_map,\n    CU_TENSOR_MAP_DATA_TYPE_FLOAT16,\n    2, lhs_ptr,\n    tma_shape, tma_strides,\n    tma_box, tma_elem_strides,\n    CU_TENSOR_MAP_INTERLEAVE_NONE,\n    CU_TENSOR_MAP_SWIZZLE_128B,\n    CU_TENSOR_MAP_L2_PROMOTION_NONE,\n    CU_TENSOR_MAP_FLOAT_OOB_FILL_NONE);\n\n// Barrier init (device side)\n__shared__ cuda::barrier<\n    cuda::thread_scope_block> bar;\nif (threadIdx.x == 0) {\n    init(&bar, blockDim.x);\n    cde::fence_proxy_async_shared_cta();\n}\n__syncthreads();\n\n// Async copy (device side)\nif (threadIdx.x == 0) {\n    cde::cp_async_bulk_tensor_2d_global_to_shared(\n        lhs_s, &tma_map,\n        k * TILE_K, blockIdx.y * WARP_M,\n        bar);\n}\nbar.arrive_and_wait();"}
-      ]'></div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════ -->
-<!-- SLIDE 7b: Dense 2D MMA — Tensor Core comparison        -->
-<!-- ═══════════════════════════════════════════════════════ -->
-<section class="dense">
-  <div class="slide-header">
-    <img src="../../assets/images/logo%202%20new.png" alt="">
-    <span class="header-title">CroqTile</span>
-    <span class="header-sep">|</span>
-    <span class="header-section">Chapter 1 — Simplicity + Performance</span>
-  </div>
-  <div class="slide-footer">
-    <span class="footer-brand">CroqTile — The Next-Gen GPU &amp; DSA Language</span>
-    <span class="footer-right">github.com/croqtile</span>
-  </div>
-  <h2>Tensor Core MMA — One Semantic, All Instructions</h2>
-  <div class="website-split">
-    <div class="claims">
-      <div class="claim-item">
-        <span class="claim-icon">&#x1F9E9;</span>
-        <span>Complete MMA cycle in <strong>5 lines</strong>: <code>mma.fill</code>, <code>mma.load</code> &times;2, <code>mma.row.row</code>, <code>mma.store</code></span>
-      </div>
-      <div class="claim-item">
-        <span class="claim-icon">&#x1F6E1;</span>
-        <span>Encapsulates error-prone <strong>WGMMA descriptor configuration</strong> — no manual register layout or fence management</span>
-      </div>
-      <div class="claim-item">
-        <span class="claim-icon">&#x2705;</span>
-        <span><strong>Compile-time shape/dtype constraint checking</strong>: e.g., WARP_M must be 64 for f16 on SM90</span>
-      </div>
-      <div class="claim-item">
-        <span class="claim-icon">&#x1F3AF;</span>
-        <span><strong>Compile-time dispatch</strong> selects optimal instruction: HMMA (SM70/80) vs WGMMA (SM90) — zero runtime overhead</span>
-      </div>
-      <p class="loc-hchart-title">Lines of code — MMA operations</p>
-      <div class="loc-hchart">
-        <div class="loc-hbar-row"><span class="loc-hbar-label">Triton</span><div class="loc-hbar triton" style="width:12%"><span class="loc-hbar-value">3 L</span></div></div>
-        <div class="loc-hbar-row"><span class="loc-hbar-label">TileLang</span><div class="loc-hbar tilelang" style="width:12%"><span class="loc-hbar-value">3 L</span></div></div>
-        <div class="loc-hbar-row"><span class="loc-hbar-label">Croqtile</span><div class="loc-hbar croqtile" style="width:20%"><span class="loc-hbar-value">5 L</span></div></div>
-        <div class="loc-hbar-row"><span class="loc-hbar-label">Croqtile-Python</span><div class="loc-hbar croqtile-python" style="width:20%"><span class="loc-hbar-value">5 L</span></div></div>
-        <div class="loc-hbar-row"><span class="loc-hbar-label">CUTLASS</span><div class="loc-hbar cutlass" style="width:60%"><span class="loc-hbar-value">15 L</span></div></div>
-        <div class="loc-hbar-row"><span class="loc-hbar-label">CUDA</span><div class="loc-hbar cuda" style="width:100%"><span class="loc-hbar-value">25 L</span></div></div>
-      </div>
-    </div>
-    <div>
-      <div class="editor-showcase" data-tabs='[
-        {"file":"Croqtile","badge":"CROQTILE","label":"5-line MMA cycle","lang":"choreo","code":"// Complete MMA cycle — 5 lines\nmc = mma.fill.f16 0.0f;\n\nma = mma.load.swiz<128>\n  lhs_s.chunkat(_, iv);\nmb = mma.load.swiz<128>\n  rhs_s.chunkat(_, iv);\n\nmma.row.row mc, ma, mb;\n\nmma.store mc, output_s;\n\n// Compiler dispatches:\n//   SM70/80 -> HMMA instructions\n//   SM90    -> WGMMA instructions\n// Shape constraints checked at\n// compile time (WARP_M=64 for f16)"},
-        {"file":"croqtile-python","badge":"PYTHON","label":"croq.mma — 5-line MMA cycle","lang":"python","code":"import croq\n\n@croq.co\ndef matmul(lhs: croq.f16[128, 64],\n           rhs: croq.f16[64, 256]) -> croq.f16[128, 256]:\n    output = croq.declare(\n        croq.f16[128, 256], \"output\")\n    for m, n in croq.parallel(m=2, n=16):\n        # 1. Fill accumulator\n        mc = croq.mma.fill(0.0)\n        for g0, g1 in croq.parallel(\n                g0=4, g1=1, scope=\"group\"):\n            croq.mma.fill(mc, 0.0)\n            for k in croq.foreach(k=4):\n                # 2-3. Load fragments\n                ma = croq.mma.load(\n                    lhs.chunkat(m @ g0, k))\n                mb = croq.mma.load(\n                    rhs.chunkat(k, n @ g1))\n                # 4. Execute MMA\n                croq.mma.exec(\n                    mc, ma, mb, method=\"row.col\")\n            # 5. Store result\n            croq.mma.store(\n                mc, output.chunkat(\n                    m @ g0, n @ g1))\n    return output"},
-        {"file":"Triton","badge":"","label":"tl.dot — 3 LOC","lang":"python","code":"# Accumulator init\nacc = tl.zeros(\n    (BLOCK_M, BLOCK_N),\n    dtype=tl.float32)\n\nfor k in range(0, tl.cdiv(K, BLOCK_K)):\n    a = tl.load(a_ptrs, mask=...)\n    b = tl.load(b_ptrs, mask=...)\n    # MMA is a single call\n    acc = tl.dot(a, b, acc)\n    a_ptrs += BLOCK_K * stride_ak\n    b_ptrs += BLOCK_K * stride_bk\n\n# tl.dot hides instruction selection\n# but no explicit control over\n# HMMA vs WGMMA dispatch"},
-        {"file":"TileLang","badge":"","label":"T.gemm — 3 LOC","lang":"python","code":"# Fragment allocation\nC_local = T.alloc_fragment(\n    (block_M, block_N), accum_dtype)\nT.clear(C_local)\n\nfor idx in T.Pipelined(\n        T.ceildiv(K, block_K),\n        num_stages=3):\n    T.copy(A[by*block_M, idx*block_K],\n           A_shared)\n    T.copy(B[idx*block_K, bx*block_N],\n           B_shared)\n    # Single MMA call\n    T.gemm(A_shared, B_shared, C_local)\n\nT.copy(C_local,\n    C[by * block_M, bx * block_N])"},
-        {"file":"CuTe / CUTLASS","badge":"","label":"TiledMMA + partition — 15 LOC","lang":"cpp","code":"// MMA atom setup\nusing MMA = decltype(make_tiled_mma(\n    SM90_16x8x16_F16F16F16F16_TN{}));\nTiledMMA tiled_mma;\nauto thr_mma = tiled_mma.get_slice(\n    threadIdx.x);\n\n// Partition fragments\nTensor tCrA =\n    thr_mma.partition_fragment_A(\n        sA(_, _, 0));\nTensor tCrB =\n    thr_mma.partition_fragment_B(\n        sB(_, _, 0));\nTensor tCrC =\n    thr_mma.partition_fragment_C(gC);\nclear(tCrC);\n\n// K-loop with copy + MMA\nfor (int k = 0; k < K_TILES; ++k) {\n    copy(sA(_, _, k), tCrA);\n    copy(sB(_, _, k), tCrB);\n    gemm(tiled_mma, tCrC, tCrA, tCrB,\n         tCrC);\n}"},
-        {"file":"CUDA","badge":"","label":"WGMMA descriptor + async — 25 LOC","lang":"cpp","code":"// WGMMA descriptor creation\nuint64_t desc_a =\n    make_smem_desc(\n        cast_smem_ptr_to_uint(sA_ptr));\nuint64_t desc_b =\n    make_smem_desc(\n        cast_smem_ptr_to_uint(sB_ptr));\n\n// Set descriptor fields\ndesc_a |= matrix_descriptor_encode(\n    stride_bytes_a,\n    leading_offset_a,\n    strideDimension_a);\n\n// Fragment registers\nuint32_t frag_c[4] = {0,0,0,0};\n\n// Async MMA with fence\nasm volatile(\n    \"wgmma.mma_async.sync.aligned\"\n    \".m64n64k16.f16.f16.f16 \"\n    \"{%0,%1,%2,%3}, %4, %5, 0;\"\n    : \"+r\"(frag_c[0]), \"+r\"(frag_c[1]),\n      \"+r\"(frag_c[2]), \"+r\"(frag_c[3])\n    : \"l\"(desc_a), \"l\"(desc_b));\n\n// Fence and commit group\nwarpgroup::mma_async_commit();\nwarpgroup::mma_async_wait<0>();"}
-      ]'></div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════ -->
-<!-- SLIDE 7c: Sparse 2D MMA — structured sparsity          -->
-<!-- ═══════════════════════════════════════════════════════ -->
-<section class="dense">
-  <div class="slide-header">
-    <img src="../../assets/images/logo%202%20new.png" alt="">
-    <span class="header-title">CroqTile</span>
-    <span class="header-sep">|</span>
-    <span class="header-section">Chapter 1 — Simplicity + Performance</span>
-  </div>
-  <div class="slide-footer">
-    <span class="footer-brand">CroqTile — The Next-Gen GPU &amp; DSA Language</span>
-    <span class="footer-right">github.com/croqtile</span>
-  </div>
-  <h2>Structured Sparse MMA — Metadata Handled Automatically</h2>
-  <div class="website-split">
-    <div class="claims">
-      <div class="claim-item">
-        <span class="claim-icon">&#x1F9F2;</span>
-        <span><code>mma.row.row.sp</code> — single modifier adds <strong>2:4 structured sparsity</strong> to existing MMA semantics</span>
-      </div>
-      <div class="claim-item">
-        <span class="claim-icon">&#x1F4E5;</span>
-        <span>Metadata has special loading patterns — <strong>prepack optimization</strong> and <strong>warp shuffle exchange</strong> handled implicitly by the compiler</span>
-      </div>
-      <div class="claim-item">
-        <span class="claim-icon">&#x1F504;</span>
-        <span>Compiler auto-generates <code>ColumnMajorInterleaved&lt;2&gt;</code> metadata reordering — no manual layout transformation</span>
-      </div>
-      <div class="claim-item">
-        <span class="claim-icon">&#x2705;</span>
-        <span>Compile-time verification of sparse constraints (packed K dimension, metadata column count)</span>
-      </div>
-      <div class="claim-item">
-        <span class="claim-icon">&#x1F517;</span>
-        <span>Same <code>mma.load</code> semantics — compiler dispatches <code>.sp</code> variant. No separate metadata API</span>
-      </div>
-      <p class="loc-hchart-title">Lines of code — metadata handling only</p>
-      <div class="loc-hchart">
-        <div class="loc-hbar-row"><span class="loc-hbar-label">Croqtile</span><div class="loc-hbar croqtile" style="width:3%"><span class="loc-hbar-value">1 L</span></div></div>
-        <div class="loc-hbar-row"><span class="loc-hbar-label">Croqtile-Python</span><div class="loc-hbar croqtile-python" style="width:3%"><span class="loc-hbar-value">1 L</span></div></div>
-        <div class="loc-hbar-row"><span class="loc-hbar-label">TileLang</span><div class="loc-hbar tilelang" style="width:10%"><span class="loc-hbar-value">3 L</span></div></div>
-        <div class="loc-hbar-row"><span class="loc-hbar-label">Triton <span class="triton-no">✗</span></span><div class="loc-hbar triton triton-no-bar" style="width:0%"><span class="loc-hbar-value triton-no-label">N/A</span></div></div>
-        <div class="loc-hbar-row"><span class="loc-hbar-label">CUTLASS</span><div class="loc-hbar cutlass" style="width:50%"><span class="loc-hbar-value">15 L</span></div></div>
-        <div class="loc-hbar-row"><span class="loc-hbar-label">CUDA</span><div class="loc-hbar cuda" style="width:100%"><span class="loc-hbar-value">30 L</span></div></div>
-      </div>
-    </div>
-    <div>
-      <div class="editor-showcase" data-tabs='[
-        {"file":"Croqtile","badge":"CROQTILE","label":"mma.row.row.sp — 1 modifier","lang":"choreo","code":"// Dense MMA (for reference)\nmma.row.row mc, ma, mb;\n\n// Sparse MMA — just add .sp\n// Metadata loaded via same mma.load\nme = mma.load.swiz<128>\n  meta_s.chunkat(_, iv);\n\nmma.row.row.sp mc, ma, mb, me;\n\n// Compiler handles:\n//   - metadata prepack optimization\n//   - warp shuffle exchange\n//   - ColumnMajorInterleaved<2> layout\n//   - Sparse constraint validation\n// All implicit. Zero user code change."},
-        {"file":"croqtile-python","badge":"PYTHON","label":"Sparse MMA — planned","lang":"python","code":"import croq\n\n# Sparse MMA is planned for croqtile-python.\n# The API will mirror .co syntax:\n#\n# @croq.co\n# def sparse_matmul(...):\n#     mc = croq.mma.fill(0.0)\n#     ma = croq.mma.load(lhs_s.chunkat(...))\n#     mb = croq.mma.load(rhs_s.chunkat(...))\n#     me = croq.mma.load(meta_s.chunkat(...))\n#     # .sp modifier for sparse MMA:\n#     croq.mma.exec(\n#         mc, ma, mb, me,\n#         method=\"row.row\", sparse=True)\n#     croq.mma.store(mc, output_s)\n#\n# Dense MMA is fully supported today:\n\n@croq.co\ndef dense_matmul(\n        lhs: croq.f16[128, 256],\n        rhs: croq.f16[256, 256]) -> croq.f16[128, 256]:\n    output = croq.declare(\n        croq.f16[128, 256], \"output\")\n    for m, n in croq.parallel(\n            m=4, n=8, scope=croq.BLOCK):\n        mc = croq.mma.fill(0.0)\n        for g0, g1 in croq.parallel(\n                g0=2, g1=2, scope=\"group\"):\n            for k in croq.foreach(k=16):\n                ma = croq.mma.load(\n                    lhs.chunkat(m @ g0, k))\n                mb = croq.mma.load(\n                    rhs.chunkat(k, n @ g1))\n                croq.mma.exec(\n                    mc, ma, mb, method=\"row.col\")\n            croq.mma.store(\n                mc, output.chunkat(\n                    m @ g0, n @ g1))\n    return output"},
-        {"file":"Triton ✗","badge":"","label":"Not Supported — Triton has no structured sparsity","lang":"python","code":"# ✗ Triton does NOT support\n#   structured sparse MMA\n#\n# No equivalent of mma.row.row.sp\n# No metadata handling primitives\n# No 2:4 sparsity pattern support\n#\n# Users must drop to raw PTX inline\n# assembly or use an external library\n# (e.g. CUTLASS) to access sparse\n# tensor cores.\n#\n# This is a fundamental limitation\n# of the Triton programming model."},
-        {"file":"TileLang","badge":"","label":"T.gemm_sp — 3 LOC","lang":"python","code":"from tilelang.intrinsics import (\n    make_mma_swizzle_layout)\n\n# Sparse GEMM requires compressor\nC_local = T.alloc_fragment(\n    (block_M, block_N), accum_dtype)\nT.clear(C_local)\n\nfor idx in T.Pipelined(\n        T.ceildiv(K // 2, block_K),\n        num_stages=3):\n    T.copy(A_sparse[by*block_M,\n                    idx*block_K],\n           A_shared)\n    T.copy(B[idx*block_K*2,\n             bx*block_N],\n           B_shared)\n    T.copy(E[by*block_M,\n             idx*block_K // 8],\n           E_shared)\n    # Sparse MMA call\n    T.gemm_sp(\n        A_shared, B_shared,\n        C_local, E_shared)"},
-        {"file":"CuTe / CUTLASS","badge":"","label":"SparseMma + metadata layout — 15 LOC","lang":"cpp","code":"// Sparse MMA atom\nusing SparseMMA = SparseMma<\n    SM80_16x8x32_F16F16F16F16_TN,\n    MMAOp_WarpSize,\n    ElementA, LayoutA_MK,\n    ElementB, LayoutB_NK,\n    ElementE, LayoutE_MK>;\n\n// Metadata layout (interleaved)\nusing LayoutE = Layout<\n    Shape<Int<M/16>, Int<K/32>, Int<2>>,\n    Stride<Int<K/16>, _1,\n           Int<M*K/32>>>;\n\n// Metadata tensor\nTensor mE = make_tensor(\n    make_gmem_ptr(E_ptr), LayoutE{});\nauto tCrE =\n    thr_mma.partition_fragment_E(mE);\n\n// Copy metadata to registers\ncopy(gE(_, _, k), tCrE);\n\n// Sparse GEMM call\ngemm(sparse_mma, tCrC, tCrA, tCrB,\n     tCrC, tCrE);"},
-        {"file":"CUDA","badge":"","label":"metadata prepack + interleaved + shuffle — 30 LOC","lang":"cpp","code":"// Metadata prepack on host\nvoid prepack_metadata(\n    uint16_t* E_packed,\n    const uint16_t* E_raw,\n    int M, int K) {\n  for (int m = 0; m < M; m += 16) {\n    for (int k = 0; k < K/2; k += 16) {\n      // ColumnMajorInterleaved<2>\n      int dst_row = m / 16;\n      int dst_col = k / 16;\n      int interleaved = dst_row * 2\n          + (dst_col % 2);\n      E_packed[interleaved * (K/32)\n          + dst_col / 2]\n          = E_raw[m * (K/32) + k/16];\n    }\n  }\n}\n\n// Warp shuffle for metadata exchange\nuint32_t meta_val = E_shared[lane_id];\nmeta_val = __shfl_sync(\n    0xFFFFFFFF, meta_val,\n    (lane_id % 4) * 8\n        + (lane_id / 4), 32);\n\n// Sparse MMA PTX\nasm volatile(\n    \"mma.sp.sync.aligned\"\n    \".m16n8k32.row.col.f16.f16\"\n    \".f16.f16 {%0,%1}, {%2,%3,%4,%5},\"\n    \" {%6,%7}, {%8}, %9, 0x0;\"\n    : /* outputs */ : /* inputs */);"}
-      ]'></div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════ -->
-<!-- SLIDE 8: Parallel Programs                             -->
-<!-- ═══════════════════════════════════════════════════════ -->
-<section class="dense">
-  <div class="slide-header">
-    <img src="../../assets/images/logo%202%20new.png" alt="">
-    <span class="header-title">CroqTile</span>
-    <span class="header-sep">|</span>
-    <span class="header-section">Chapter 1 — Simplicity + Performance</span>
-  </div>
-  <div class="slide-footer">
-    <span class="footer-brand">CroqTile — The Next-Gen GPU &amp; DSA Language</span>
-    <span class="footer-right">github.com/croqtile</span>
-  </div>
-  <h2>Parallel Programs Made Simple</h2>
-  <div class="website-split">
-    <div class="claims">
-      <div class="claim-item">
-        <span class="claim-icon">&#x1F310;</span>
-        <span>Unified <code>parallel-by</code> abstraction — <strong>one keyword</strong> for all parallelism levels, hardware-agnostic</span>
-      </div>
-      <div class="claim-item">
-        <span class="claim-icon">&#x1F4BB;</span>
-        <span>Level specifiers (<code>block</code>, <code>group-4</code>, <code>thread</code>) map to <strong>GPU and DSA architectures</strong> — ideal for heterogeneous programming</span>
-      </div>
-      <div class="claim-item">
-        <span class="claim-icon">&#x1F504;</span>
-        <span>Same code targets <strong>NVIDIA, AMD, and custom DSA accelerators</strong> — no <code>blockIdx</code> / <code>threadIdx</code> / <code>__syncthreads()</code></span>
-      </div>
-      <div class="claim-item">
-        <span class="claim-icon">&#x1F4E1;</span>
-        <span><code>mpi</code> specifier enables <strong>multi-device programming</strong> without separate API or framework changes</span>
-      </div>
-      <p class="loc-hchart-title">Parallelism primitives needed</p>
-      <div class="loc-hchart">
-        <div class="loc-hbar-row"><span class="loc-hbar-label">Croqtile</span><div class="loc-hbar croqtile" style="width:25%"><span class="loc-hbar-value">2</span></div></div>
-        <div class="loc-hbar-row"><span class="loc-hbar-label">Croqtile-Python</span><div class="loc-hbar croqtile-python" style="width:25%"><span class="loc-hbar-value">2</span></div></div>
-        <div class="loc-hbar-row"><span class="loc-hbar-label">TileLang</span><div class="loc-hbar tilelang" style="width:50%"><span class="loc-hbar-value">4</span></div></div>
-        <div class="loc-hbar-row"><span class="loc-hbar-label">Triton</span><div class="loc-hbar triton" style="width:63%"><span class="loc-hbar-value">5</span></div></div>
-        <div class="loc-hbar-row"><span class="loc-hbar-label">CUTLASS</span><div class="loc-hbar cutlass" style="width:75%"><span class="loc-hbar-value">6</span></div></div>
-        <div class="loc-hbar-row"><span class="loc-hbar-label">CUDA</span><div class="loc-hbar cuda" style="width:100%"><span class="loc-hbar-value">8</span></div></div>
-      </div>
-    </div>
-    <div>
-      <div class="editor-showcase" data-tabs='[
-        {"file":"Croqtile","badge":"CROQTILE","label":"parallel-by — 2 primitives","lang":"choreo","code":"// Block-level parallelism\nparallel {bm, bn}\n  by [cdiv(M, WARP_M),\n      cdiv(N, WARP_N)] : block {\n\n  // Warp-group level (4 warps)\n  parallel p by 1 : group-4 {\n    ma = mma.load.swiz<128> lhs_s;\n    mma.row.row mc, ma, mb;\n  }\n\n  // Thread-level parallelism\n  parallel {m, n}\n    by [WARP_M, 2] : thread { ... }\n\n  // Multi-device (MPI)\n  parallel dev by 4 : mpi { ... }\n}\n\n// Warp-specialized producer/consumer\nparallel p1 by 2 : group-4 {\n  inthreads.async (p1 == 0) { /* TMA */ }\n  inthreads.async (p1 == 1) { /* MMA */ }\n}"},
-        {"file":"croqtile-python","badge":"PYTHON","label":"for...in croq.parallel — Pythonic scopes","lang":"python","code":"import croq\n\n@croq.co\ndef kernel(\n        x: croq.s32[6, 128]) -> croq.s32[6, 128]:\n    out = croq.declare(\n        croq.s32[6, 128], \"out\")\n\n    # Block-level parallelism\n    for p in croq.parallel(\n            p=6, scope=croq.BLOCK):\n        # Thread-level parallelism\n        for t in croq.parallel(\n                t=128, scope=croq.THREAD):\n            out[p, t] = x[p, t]\n    return out\n\n# Warp-group scope:\n# for g in croq.parallel(\n#     g=4, scope=\"group-4\"):\n#     ...\n\n# All scopes use Python for-loops:\n#   croq.parallel()  → parallel-by\n#   croq.foreach()   → foreach loop\n#   croq.with_in()   → with/as context\n#   croq.BLOCK / croq.THREAD / \"group-4\""},
-        {"file":"Triton","badge":"","label":"5 primitives","lang":"python","code":"@triton.jit\ndef kernel(...):\n    # 1. program_id — block identity\n    pid = tl.program_id(axis=0)\n\n    # 2. num_programs — grid size\n    num_pids = tl.num_programs(axis=0)\n\n    # 3. Grid launch (host side)\n    # grid = (cdiv(M,BM) * cdiv(N,BN),)\n    # kernel[grid](...)\n\n    # 4. Launch config (host)\n    # num_warps=4, num_stages=3\n\n    # 5. Cooperative groups (limited)\n    # No warp-group or thread-level\n    # control within kernel\n\n    # Thread-level is implicit (SIMT)\n    # No multi-device support\n    # No warp specialization"},
-        {"file":"TileLang","badge":"","label":"4 primitives","lang":"python","code":"@T.prim_func\ndef main(A: T.Tensor(...), ...):\n  # 1. T.Kernel — grid launch\n  with T.Kernel(\n      T.ceildiv(N, block_N),\n      T.ceildiv(M, block_M),\n      threads=128) as (bx, by):\n\n    # 2. T.Parallel — block iteration\n    for i in T.Parallel(block_M):\n        C_local[i] = 0\n\n    # 3. T.Pipelined — staged pipeline\n    for k in T.Pipelined(\n        T.ceildiv(K, block_K),\n        num_stages=3):\n      T.copy(A[...], A_shared)\n      T.gemm(A_shared, B_shared, C_local)\n\n    # 4. T.WarpSpecialize (advanced)\n    with T.WarpSpecialize() as ws:\n      with ws.body(0): # producer\n        T.copy(A[...], A_shared)\n      with ws.body(1): # consumer\n        T.gemm(...)"},
-        {"file":"CuTe / CUTLASS","badge":"","label":"6 primitives","lang":"cpp","code":"template <class TiledMMA>\n__global__ void kernel(...) {\n  // 1. blockIdx — CTA identity\n  auto cta = make_coord(\n      blockIdx.x, blockIdx.y, _);\n\n  // 2. threadIdx — thread identity\n  auto thr_mma =\n      tiled_mma.get_slice(threadIdx.x);\n\n  // 3. TiledMMA::get_slice —\n  //    partitions work across threads\n  Tensor tCrA =\n      thr_mma.partition_fragment_A(gA);\n\n  // 4. __syncthreads — barriers\n  __syncthreads();\n\n  // 5. Pipeline — async scheduling\n  auto pipeline =\n      make_pipeline(params);\n  pipeline.producer_acquire();\n\n  // 6. Cluster (SM90)\n  // cute::cluster_arrive_relaxed();\n}"},
-        {"file":"CUDA","badge":"","label":"8 primitives","lang":"cpp","code":"__global__ void kernel(...) {\n  // 1. blockIdx — CTA identity\n  int bx = blockIdx.x;\n  int by = blockIdx.y;\n\n  // 2. threadIdx — thread identity\n  int tx = threadIdx.x;\n  int ty = threadIdx.y;\n\n  // 3. blockDim — block shape\n  int threads = blockDim.x * blockDim.y;\n\n  // 4. gridDim — grid shape\n  int blocks = gridDim.x * gridDim.y;\n\n  // 5. __syncthreads — barrier\n  __syncthreads();\n\n  // 6. cooperative_groups\n  auto grid =\n      cg::this_grid();\n  auto block =\n      cg::this_thread_block();\n  auto warp =\n      cg::tiled_partition<32>(block);\n\n  // 7. Launch config\n  // kernel<<<grid, block, smem,\n  //          stream>>>(...);\n\n  // 8. Stream — async scheduling\n  // cudaStreamCreate(&stream);\n}"}
-      ]'></div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════ -->
-<!-- SLIDE 9: Optimization Patterns in Real Kernels         -->
-<!-- ═══════════════════════════════════════════════════════ -->
-<section class="dense">
-  <div class="slide-header">
-    <img src="../../assets/images/logo%202%20new.png" alt="">
-    <span class="header-title">CroqTile</span>
-    <span class="header-sep">|</span>
-    <span class="header-section">Chapter 1 — Simplicity + Performance</span>
-  </div>
-  <div class="slide-footer">
-    <span class="footer-brand">CroqTile — The Next-Gen GPU &amp; DSA Language</span>
-    <span class="footer-right">github.com/croqtile</span>
-  </div>
-  <h2>All GPU Optimization Patterns — Clean &amp; Composable</h2>
-  <p>Every advanced optimization technique is a <strong>first-class language construct</strong>, not boilerplate. Each pattern shown below is highlighted from real production kernels.</p>
-  <div class="editor-showcase editor-compact pattern-showcase" data-tabs='[
-    {"file":"Persistent Kernel","badge":"PATTERN","label":"matmul_f16_dyn_persis_sta_sm90.co","lang":"choreo","code":"__co__ void matmul(global f16 [M, K] lhs,\n    global f16 [N, K] rhs, global f16 [M, N] output) {\n  @@int total_tiles = cdiv(M, WARP_M) * cdiv(N, WARP_N);@@\n  @@parallel block_id by NUM_SMS : block {@@\n    shared f16 [WARP_M, TILE_K] lhs_load_s;\n    shared f16 [WARP_N, TILE_K] rhs_load_s;\n    shared f16 [WARP_M, WARP_N] output_s;\n    @@foreach {tile_iter} in [cdiv(total_tiles, NUM_SMS)] {@@\n      @@tile_id = tile_iter # block_id;@@\n      @@if (tile_id < total_tiles) {@@\n        @@block_m = tile_id / cdiv(N, WARP_N);@@\n        @@block_n = tile_id % cdiv(N, WARP_N);@@\n        mc = mma.fill.f16 0.0f;\n        foreach {iv_k} in [cdiv(K, TILE_K)] {\n          tma.copy.swiz<SWIZ> lhs.subspan(...).at(block_m, iv_k) => lhs_load_s;\n          ...\n        }\n        mma.store mc, output_s;\n        tma.copy output_s => output.subspan(...).at(block_m, block_n);\n      }\n    }\n  }\n}"},
-    {"file":"Producer-Consumer","badge":"PATTERN","label":"matmul_f16_dyn_sm90_warpspec_1p2c.co","lang":"choreo","code":"__co__ void matmul(global f16 [M, K] lhs, ...) {\n  parallel {block_m, block_n} by [...] : block {\n    shared event full[STAGES], empty[STAGES];\n    shared f16 [STAGES * TILE_M, TILE_K] lhs_load_s;\n    @@parallel p1 by 3 : group-4 {@@\n      @@inthreads.async (p1 == 0) {@@\n        @@// PRODUCER: TMA loads@@\n        foreach {iv_k} in [cdiv(K, TILE_K)] {\n          stage = iv_k % STAGES;\n          @@wait empty[stage];@@\n          tma.copy.async<full[stage]>.swiz<SWIZ>\n            lhs.subspan(...).at(block_m, iv_k)\n              => lhs_load_s.subspan(...).at(stage, 0);\n          @@trigger full[stage];@@\n        }\n      }\n      @@inthreads.async (p1 > 0) {@@\n        @@// CONSUMERS: MMA compute@@\n        mc = mma.fill.f16 0.0f;\n        foreach {iv_k} in [cdiv(K, TILE_K)] {\n          stage = iv_k % STAGES;\n          @@wait full[stage];@@\n          ma = mma.load.swiz<SWIZ> lhs_load_s...;\n          mb = mma.load.swiz<SWIZ> rhs_load_s...;\n          mma.row.row mc, ma, mb;\n          mma.commit;\n          @@trigger empty[stage];@@\n        }\n      }\n    }\n  }\n}"},
-    {"file":"Pipeline (Staging)","badge":"PATTERN","label":"blockscale_gemm_e4m3_warpspec_persis_1p1c.co","lang":"choreo","code":"__co__ void blockscale_gemm(global f8_e4m3 [M, K] lhs,\n    global f32 [M, DIV_BLK_K] scale_lhs, ...) {\n  parallel block_id by NUM_SMS : block {\n    @@shared event full[STAGES], empty[STAGES];@@\n    @@shared f8_e4m3 [STAGES * WARP_M, TILE_K] lhs_load_s;@@\n    @@shared f8_e4m3 [STAGES * WARP_N, TILE_K] rhs_load_s;@@\n    foreach {tile_iter} in [cdiv(total_tiles, NUM_SMS)] {\n      parallel p1 by 2 : group-4 {\n        inthreads.async (p1 == 0) {\n          foreach {iv_k} in [cdiv(K, TILE_K)] {\n            @@stage = iv_k % STAGES;@@\n            @@wait empty[stage];@@\n            tma.copy.async<@@full[stage]@@>.swiz<SWIZ>\n              lhs...at(block_m, iv_k)\n                => lhs_load_s...at(@@stage@@, 0);\n            @@trigger full[stage];@@\n          }\n        }\n        inthreads.async (p1 == 1) {\n          foreach {iv_k} in [cdiv(K, TILE_K)] {\n            @@stage = iv_k % STAGES;@@\n            @@wait full[stage];@@\n            ...\n            @@trigger empty[stage];@@\n          }\n        }\n      }\n    }\n  }\n}"},
-    {"file":"Double Buffering","badge":"PATTERN","label":"swap / rotate — matmul-pipelined-2.co + mma_v2.co","lang":"choreo","code":"// Double buffering with swap (matmul)\n__co__ auto matmul(f16 [M, K] lhs, f16 [K, N] rhs) {\n  parallel {m, n} by [...] : block {\n    mc = mma.fill 0.0;\n    with k in K / MMA_K {\n      @@fl0 = dma.copy.async lhs => shared;@@\n      @@fr0 = dma.copy.async rhs => shared;@@\n      @@fl1 = dma.any;@@\n      @@fr1 = dma.any;@@\n      foreach k(1:) {\n        @@fl1 = dma.copy.async lhs => shared;@@\n        @@fr1 = dma.copy.async rhs => shared;@@\n        wait fl0, fr0;\n        ma = mma.load fl0.chunkat(...);\n        mb = mma.load fr0.chunkat(...);\n        mma.row.col mc, ma, mb;\n        @@swap(fl0, fl1);@@\n        @@swap(fr0, fr1);@@\n      }\n      wait fl0, fr0;\n      ma = mma.load fl0.chunkat(...);\n      mma.row.col mc, ma, mb;\n    }\n    mma.store mc, output.chunkat(...);\n  }\n}\n\n// Triple buffering with rotate\nfa = dma.copy.async input.chunkat(i) => local;\nfb = dma.copy.async input.chunkat(i+1) => local;\nfc = dma.any;\nforeach i(2:) {\n  fc = dma.copy.async input.chunkat(i) => local;\n  wait fa;\n  dma.copy fa.data => output.chunkat(i-2);\n  @@rotate(fa, fb, fc);@@\n}"},
-    {"file":"Tiling","badge":"PATTERN","label":"matmul_f16_dyn_persis_sta_sm90.co","lang":"choreo","code":"@@#define WARP_M 64@@\n@@#define WARP_N 128@@\n@@#define TILE_K 64@@\n@@#define WARP_K 16@@\n\n__co__ void matmul(global f16 [M, K] lhs,\n    global f16 [N, K] rhs, global f16 [M, N] output) {\n  int total = @@cdiv(M, WARP_M) * cdiv(N, WARP_N)@@;\n  parallel block_id by NUM_SMS : block {\n    shared f16 [@@WARP_M@@, @@TILE_K@@] lhs_load_s;\n    shared f16 [@@WARP_N@@, @@TILE_K@@] rhs_load_s;\n    shared f16 [@@WARP_M@@, @@WARP_N@@] output_s;\n    foreach {tile_iter} in [cdiv(total, NUM_SMS)] {\n      ...\n      foreach {iv_k} in [@@cdiv(K, TILE_K)@@] {\n        tma.copy.swiz<SWIZ>\n          lhs.@@subspan(WARP_M, TILE_K)@@\n            .step(@@WARP_M@@, @@TILE_K@@).at(block_m, iv_k)\n              => lhs_load_s;\n        foreach {iv_warp} in [@@cdiv(TILE_K, WARP_K)@@] {\n          parallel p by 1 : group-4 {\n            ma = mma.load.swiz<SWIZ>\n              lhs_load_s.@@chunkat@@(_, iv_warp);\n            mb = mma.load.swiz<SWIZ>\n              rhs_load_s.@@chunkat@@(_, iv_warp);\n            mma.row.row mc, ma, mb;\n          }\n        }\n      }\n    }\n  }\n}"},
-    {"file":"Swizzle","badge":"PATTERN","label":"matmul + blockscale_gemm + gemm_sp","lang":"choreo","code":"#define SWIZ 128\n\n// TMA copy with swizzle mode\ntma.copy@@.swiz<128>@@\n  lhs.subspan(WARP_M, TILE_K).at(bm, iv_k)\n    => lhs_load_s;\n\ntma.copy@@.swiz<SWIZ>@@\n  rhs.subspan(WARP_N, TILE_K).at(bn, iv_k)\n    => rhs_load_s;\n\n// Async TMA with staged events + swizzle\ntma.copy.async<full[stage]>@@.swiz<SWIZ>@@\n  lhs.subspan(TILE_M, TILE_K).at(block_m, iv_k)\n    => lhs_load_s.subspan(...).at(stage, 0);\n\n// MMA load with swizzle\nma = mma.load@@.swiz<128>@@\n  lhs_load_s.chunkat(_, iv_warp);\nmb = mma.load@@.swiz<SWIZ>@@\n  rhs_load_s.chunkat(_, iv_warp);\n\n// Sparse MMA also uses swizzle\nlhs_load_s = tma.copy@@.swiz<64>@@\n  lhs_packed.chunkat(block_m, iv_k) => shared;\nrhs_load_s = tma.copy@@.swiz<128>@@\n  rhs.chunkat(block_n, iv_k) => shared;"}
-  ]'></div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════ -->
-<!-- SLIDE 11: C++ Integration — Seamless Host Calling      -->
-<!-- ═══════════════════════════════════════════════════════ -->
-<section class="dense">
-  <div class="slide-header">
-    <img src="../../assets/images/logo%202%20new.png" alt="">
-    <span class="header-title">CroqTile</span>
-    <span class="header-sep">|</span>
-    <span class="header-section">Chapter 1 — Simplicity + Performance</span>
-  </div>
-  <div class="slide-footer">
-    <span class="footer-brand">CroqTile — The Next-Gen GPU &amp; DSA Language</span>
-    <span class="footer-right">github.com/croqtile</span>
-  </div>
-  <h2>Seamless C++ &amp; Python Integration — Zero Boilerplate</h2>
-  <div class="website-split">
-    <div class="claims">
-      <div class="claim-item">
-        <span class="claim-icon">&#x1F517;</span>
-        <span>Call <code>__co__</code> kernels <strong>like ordinary C++ functions</strong> — no launch configuration, no grid/block setup</span>
-      </div>
-      <div class="claim-item">
-        <span class="claim-icon">&#x2699;</span>
-        <span>Compiler auto-generates <strong>host wrapper</strong>: grid dimensions, shared memory size, stream management — all hidden</span>
-      </div>
-      <div class="claim-item">
-        <span class="claim-icon">&#x1F504;</span>
-        <span>Automatic <strong>type conversion</strong>: <code>choreo::f16</code> ↔ <code>__half</code>, <code>choreo::f8_e4m3</code> ↔ <code>__nv_fp8_e4m3</code> — transparent to the user</span>
-      </div>
-      <div class="claim-item">
-        <span class="claim-icon">&#x1F4E6;</span>
-        <span>Automatic <strong>memory alignment</strong> enforcement: TMA descriptors, shared memory alignment (1024B), tensor map creation — all compiler-managed</span>
-      </div>
-      <div class="claim-item">
-        <span class="claim-icon">&#x1F6E1;</span>
-        <span>Auto-generated <strong>runtime shape checks</strong>: dimension consistency validated before kernel launch</span>
-      </div>
-      <div class="claim-item">
-        <span class="claim-icon">&#x1F4CA;</span>
-        <span>Built-in <strong>profiling harness</strong>: <code>choreo::timing()</code> with warmup, repeat, and TFLOPS calculation</span>
-      </div>
-      <blockquote style="margin-top:8px;font-size:0.75em;">Compiles to CUDA/CuTe via <code>choreo -gs -t cute -arch=sm_90a</code>, producing standard <code>.cu</code> files compatible with <code>nvcc</code> and CUTLASS.</blockquote>
-    </div>
-    <div>
-      <div class="editor-showcase editor-short" data-tabs='[
-        {"file":"Kernel (.co)","badge":"CROQTILE","label":"matmul.co — kernel definition","lang":"choreo","code":"__co__ choreo_kernel(\n    global f16 [M,K] lhs,\n    global f16 [N,K] rhs,\n    global f16 [M,N] output) {\n  /* IMPL OF KERNEL */\n}"},
-        {"file":"Kernel (Python)","badge":"PYTHON","label":"import croq — kernel definition","lang":"python","code":"import croq\n\n@croq.co\ndef matmul_kernel(\n        lhs: croq.f16[128, 256],\n        rhs: croq.f16[256, 256]\n) -> croq.f16[128, 256]:\n    output = croq.declare(\n        croq.f16[128, 256], \"output\")\n    for m, n in croq.parallel(\n            m=4, n=8, scope=croq.BLOCK):\n        mc = croq.mma.fill(0.0)\n        for g0, g1 in croq.parallel(\n                g0=2, g1=2, scope=\"group\"):\n            croq.mma.fill(mc, 0.0)\n            for k in croq.foreach(k=16):\n                ma = croq.mma.load(\n                    lhs.chunkat(m @ g0, k))\n                mb = croq.mma.load(\n                    rhs.chunkat(k, n @ g1))\n                croq.mma.exec(\n                    mc, ma, mb,\n                    method=\"row.col\")\n            croq.mma.store(\n                mc, output.chunkat(\n                    m @ g0, n @ g1))\n    return output"}
-      ]'></div>
-      <div class="editor-showcase editor-short" data-tabs='[
-        {"file":"Host (C++)","badge":"","label":"main.cpp — zero boilerplate","lang":"cpp","code":"#include \"matmul.co\"\n\nint main() {\n  auto lhs_h = choreo::make_spandata<choreo::f16>(M, K);\n  auto rhs_h = choreo::make_spandata<choreo::f16>(N, K);\n  lhs_h.fill_random(0, 2);\n\n  auto lhs_d = choreo::make_spanview<choreo::f16, 2>(\n      a_d, {M, K});\n  auto rhs_d = choreo::make_spanview<choreo::f16, 2>(\n      b_d, {N, K});\n\n  // Call kernel like any C++ function\n  choreo_kernel(lhs_d, rhs_d, res_d);\n\n  // Built-in profiling\n  choreo::TimerOption topt{.warmup=10, .repeat=500};\n  auto avg_ms = choreo::timing(\n      [&]() { choreo_kernel(lhs_d, rhs_d, res_d);\n               cudaDeviceSynchronize(); }, topt);\n}"},
-        {"file":"Host (Python)","badge":"PYTHON","label":"import croq — Pythonic host","lang":"python","code":"import croq\n\n# Define kernel (see Kernel tab)\nprog = croq.Program()\nprog.add(matmul_kernel)\n\n# Compile to .co, then to CUDA\nprog.compile(arch=\"sm_90a\")\n\n# Allocate tensors\nimport torch\nlhs = torch.randn(128, 256, dtype=torch.float16,\n                   device=\"cuda\")\nrhs = torch.randn(256, 256, dtype=torch.float16,\n                   device=\"cuda\")\n\n# Launch kernel — zero boilerplate\nresult = prog.run(matmul_kernel, lhs, rhs)\n\n# Built-in profiling\nms = prog.benchmark(\n    matmul_kernel, lhs, rhs,\n    warmup=10, repeat=500)\nprint(f\"{ms:.3f} ms\")"}
-      ]'></div>
-    </div>
-  </div>
-</section>
+<!-- Slides 6–9 merged into aggregated tab slide above -->
 
 <!-- ═══════════════════════════════════════════════════════ -->
 <!-- SLIDE 12: Chapter 2 — Compile-Time Safety              -->
@@ -866,6 +507,42 @@
   <h4>Chapter 2</h4>
   <h2>Highlight 2: Compile-Time Code Safety</h2>
   <p>Best of all competitors: Triton / CuTe / Cutile / Helion</p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SLIDE 12a: Why Compile-Time Checks Matter              -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section class="dense">
+  <div class="slide-header">
+    <img src="../../assets/images/logo%202%20new.png" alt="">
+    <span class="header-title">CroqTile</span>
+    <span class="header-sep">|</span>
+    <span class="header-section">Chapter 2 — Compile-Time Safety</span>
+  </div>
+  <div class="slide-footer">
+    <span class="footer-brand">CroqTile — The Next-Gen GPU &amp; DSA Language</span>
+    <span class="footer-right">github.com/croqtile</span>
+  </div>
+  <h2>Why Compile-Time Checking Matters</h2>
+  <div class="website-split" style="grid-template-columns:0.82fr 1.18fr;">
+    <div class="claims">
+      <div class="claim-item">
+        <span><strong>GPU bugs are silent</strong> — wrong shapes or OOB reads produce garbage output, not crashes. No stack trace, no debugger for 10k threads.</span>
+      </div>
+      <div class="claim-item">
+        <span><strong>CroqTile catches them at compile time</strong> — exact file, line, and root cause before any GPU execution.</span>
+      </div>
+      <div class="claim-item">
+        <span><strong>Why?</strong> A standalone compiler (not a Python DSL) owns the full program — shapes, types, and memory hierarchy are statically visible across all passes.</span>
+      </div>
+    </div>
+    <div>
+      <div class="editor-showcase pattern-showcase" data-tabs='[
+        {"file":"CUDA (runtime)","badge":"SILENT","label":"out-of-bounds — no diagnostic","lang":"text","code":"$ nvcc oob.cu -o oob && ./oob\nCompiling...  OK\n\nRunning tiled_copy kernel...\nResult[62..65]:\n@@  3.141  2.718  0.000  -1.#IND\n@@                ^^^^   ^^^^^^^\n@@  (reads garbage from adjacent memory)\n  (no crash, no error code, no warning)\n\n$ compute-sanitizer ./oob\n@@========= Invalid __global__ read\n@@=========   of size 4 at 0x00000148\n@@=========   by thread (62,0,0)\n  (only found at runtime, only this input)"},
+        {"file":"CroqTile (compile)","badge":"CAUGHT","label":"same bug — rejected before GPU launch","lang":"text","code":"$ choreo oob.co -t cute -arch=sm_90a\n\n@@oob.co:9:22: error: offset out of\n@@  bounds for dimension 0 (101 >= 14).\n\n  9 |   f = dma.copy data\n 10 |     .subspan(32, 44)\n@@ 11 |     .from(101, 7) => shared;\n@@    |           ^^^\n@@    | size 14, offset 101 exceeds.\n\nhint: reduce the .from() offset.\n\n1 error. Compilation stopped."}
+      ]'></div>
+    </div>
+  </div>
 </section>
 
 <!-- ═══════════════════════════════════════════════════════ -->
@@ -886,30 +563,23 @@
   <div class="website-split" style="grid-template-columns:0.85fr 1.15fr;">
     <div class="claims">
       <div class="claim-item">
-        <span class="claim-icon" style="background:#fee2e2;">&#x1F6AB;</span>
-        <span><strong>Shape / type mismatch</strong> — DMA copy between tensors with incompatible shapes, ranks, or element types caught at compile time</span>
+        <span><strong>Shape / type mismatch</strong> — incompatible ranks or element types in DMA/MMA</span>
       </div>
       <div class="claim-item">
-        <span class="claim-icon" style="background:#fef3c7;">&#x1F6A7;</span>
-        <span><strong>Out-of-bounds access</strong> — static index/offset analysis catches buffer overruns before they become silent corruption</span>
+        <span><strong>Out-of-bounds access</strong> — static offset/index analysis catches overruns</span>
       </div>
       <div class="claim-item">
-        <span class="claim-icon" style="background:#dbeafe;">&#x2699;</span>
-        <span><strong>HW constraint validation</strong> — MMA shape/dtype must match hardware capabilities (e.g., SM_86 vs SM_90 instruction set)</span>
+        <span><strong>HW constraint violation</strong> — MMA config vs. target SM architecture</span>
       </div>
       <div class="claim-item">
-        <span class="claim-icon" style="background:#ede9fe;">&#x1F504;</span>
-        <span><strong>Synchronization analysis</strong> — async futures that are never <code>wait</code>-ed are flagged at compile time, preventing deadlocks and races</span>
+        <span><strong>Unwait-ed async</strong> — futures never consumed are flagged</span>
+      </div>
+      <div class="claim-item">
+        <span><strong>Parallel nesting rules</strong> — illegal constructs at wrong parallel level</span>
       </div>
       <div class="cuda-compare">
-        <h4 style="margin-top:10px;">In CUDA / CuTe — these are all silent bugs</h4>
-        <ul style="font-size:0.72em;margin-top:4px;">
-          <li>Shape mismatches &rarr; <strong>silent data corruption</strong></li>
-          <li>Out-of-bounds &rarr; <strong>intermittent wrong results</strong></li>
-          <li>Wrong MMA shape &rarr; <strong>GPU hang, no diagnostic</strong></li>
-          <li>Missing sync &rarr; <strong>race condition, rare crashes</strong></li>
-        </ul>
-        <blockquote style="font-size:0.72em;margin-top:6px;">"The bug that takes 5 days to find in CUDA is a compile error in CroqTile."</blockquote>
+        <h4 style="margin-top:8px;">In CUDA — all are silent runtime bugs</h4>
+        <blockquote style="font-size:0.72em;margin-top:4px;">No crash, no warning — just wrong numbers or rare hangs.</blockquote>
       </div>
     </div>
     <div>
@@ -942,32 +612,26 @@
   <div class="website-split" style="grid-template-columns:0.82fr 1.18fr;">
     <div class="claims">
       <div class="claim-item">
-        <span class="claim-icon" style="background:#dcfce9;">&#x1F6E1;</span>
-        <span><strong>Cross-parameter consistency</strong> &mdash; shared dims like <code>K</code> in <code>lhs[M,K]</code>, <code>rhs[K,N]</code> verified to match</span>
+        <span><strong>Cross-parameter shape</strong> &mdash; shared dims (<code>K</code> in <code>lhs[M,K]</code>, <code>rhs[K,N]</code>) must match</span>
       </div>
       <div class="claim-item">
-        <span class="claim-icon" style="background:#dbeafe;">&#x1F4CF;</span>
-        <span><strong>Static shape validation</strong> &mdash; actual tensor shapes checked against compile-time constants</span>
+        <span><strong>Static shape constants</strong> &mdash; actual shapes vs. declared values</span>
       </div>
       <div class="claim-item">
-        <span class="claim-icon" style="background:#fef3c7;">&#x1F4E6;</span>
-        <span><strong>Memory budget enforcement</strong> &mdash; cumulative dynamic allocation checked against HW limits</span>
+        <span><strong>Memory budget</strong> &mdash; cumulative allocation vs. HW limits</span>
       </div>
       <div class="claim-item">
-        <span class="claim-icon" style="background:#ede9fe;">&#x26A1;</span>
-        <span><strong>Tiling / parallel-by validity</strong> &mdash; bounds <code>&gt; 0</code>, tile counts non-zero, no division-by-zero</span>
+        <span><strong>Tiling &amp; iteration space</strong> &mdash; bounds &gt; 0, non-degenerate strides</span>
       </div>
       <div class="claim-item">
-        <span class="claim-icon" style="background:#fee2e2;">&#x1F4BE;</span>
-        <span><strong>DMA transfer size</strong> &mdash; dynamic DMA validated against HW transfer limits</span>
+        <span><strong>Dynamic index bounds</strong> &mdash; element indices within dimension when only known at launch</span>
+      </div>
+      <div class="claim-item">
+        <span><strong>Launch limits</strong> &mdash; thread/grid products respect SM-specific maximums</span>
       </div>
       <div class="cuda-compare">
-        <h4 style="margin-top:4px;">In CUDA &mdash; no safety net</h4>
-        <ul style="font-size:0.65em;margin-top:0;">
-          <li>Shape mismatch &rarr; <strong>silent wrong results</strong></li>
-          <li>Memory overflow &rarr; <strong>GPU hang</strong></li>
-          <li>Zero grid dim &rarr; <strong>undefined behavior</strong></li>
-        </ul>
+        <h4 style="margin-top:6px;">In CUDA &mdash; no safety net</h4>
+        <blockquote style="font-size:0.68em;margin-top:4px;">These errors produce silent wrong results, hangs, or UB.</blockquote>
       </div>
     </div>
     <div>
@@ -976,53 +640,6 @@
         {"file":"Static Shape","badge":"GENERATED","label":"rtc_shapes.co — expected dimensions","lang":"cpp","code":"// Source: __co__ foo(\n//   f32 [3, 1, 2] input, f16 [27] b)\n// Compiler auto-generates:\n\nchoreo::runtime_check(\n  input.shape()[0] == 3,\n  \"shape inconsistent on the 1st\n   parameter (input, dim: 0)\");\n\nchoreo::runtime_check(\n  input.shape()[1] == 1,\n  \"shape inconsistent on the 1st\n   parameter (input, dim: 1)\");\n\nchoreo::runtime_check(\n  input.shape()[2] == 2,\n  \"shape inconsistent on the 1st\n   parameter (input, dim: 2)\");\n\nchoreo::runtime_check(\n  b.shape()[0] == 27,\n  \"shape inconsistent on the 2nd\n   parameter (b, dim: 0)\");"},
         {"file":"Memory Budget","badge":"GENERATED","label":"named_dim.co — global memory limit","lang":"cpp","code":"// Source: __co__ foo(s32[N,M,K] lhs,\n//   s32[M,N,N] rhs, s32[K,M] filter)\n//   -> s32[K,M,K] output\n// Compiler tracks cumulative allocation:\n\nchoreo::runtime_check(\n  (size_t)0\n  + ((hp0.shape()[2]\n     * (hp0.shape()[1] * hp0.shape()[0])))\n     * 4\n  + (((hp0.shape()[1] * hp0.shape()[0])\n     * hp0.shape()[0])) * 4\n  + ((hp0.shape()[2]\n     * hp0.shape()[1])) * 4\n  + ((hp0.shape()[2]\n     * (hp0.shape()[2] * hp0.shape()[1])))\n     * 4\n  <= (size_t)MAX_BYTES,\n  \"total memory usage at global level\n   (compile time and runtime) should\n   not exceed MAX_BYTES bytes\");"},
         {"file":"Tiling Validity","badge":"GENERATED","label":"within_runtime_check.co — division safety","lang":"cpp","code":"// Source: __co__ foo(f32[M, N] data)\n//   with idx in [M, N] / {6, 8192}\n// Compiler ensures non-zero tile counts:\n\nchoreo::runtime_check(\n  (hp0.shape()[0] / 6) != 0,\n  \"zero is detected for the 1st dim\n   of the mdspan inside the with-in\n   statement\");\n\nchoreo::runtime_check(\n  (hp0.shape()[1] / 8192) != 0,\n  \"zero is detected for the 2nd dim\n   of the mdspan inside the with-in\n   statement\");\n\n// Parallel-by bounds:\nchoreo::runtime_check(\n  num_blocks > 0,\n  \"The 1st bound item of parallelby\n   is invalid: should be greater\n   than 0\");"}
-      ]'></div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════ -->
-<!-- SLIDE 14b: Compile-Time Safety Stats                   -->
-<!-- ═══════════════════════════════════════════════════════ -->
-<section class="dense">
-  <div class="slide-header">
-    <img src="../../assets/images/logo%202%20new.png" alt="">
-    <span class="header-title">CroqTile</span>
-    <span class="header-sep">|</span>
-    <span class="header-section">Chapter 2 — Compile-Time Safety</span>
-  </div>
-  <div class="slide-footer">
-    <span class="footer-brand">CroqTile — The Next-Gen GPU &amp; DSA Language</span>
-    <span class="footer-right">github.com/croqtile</span>
-  </div>
-  <h2>353 Compile-Time Checks &middot; 1,319 Runtime Assertions</h2>
-  <div class="website-split" style="grid-template-columns:1fr 1fr;">
-    <div>
-      <div class="stats-grid" style="grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;">
-        <div class="stat" style="padding:12px;"><span class="stat-value" style="font-size:1.8em;">353</span><span class="stat-label" style="font-size:0.55em;">compile-time diagnostic checks</span></div>
-        <div class="stat" style="padding:12px;"><span class="stat-value" style="font-size:1.8em;">7</span><span class="stat-label" style="font-size:0.55em;">compiler modules</span></div>
-        <div class="stat" style="padding:12px;"><span class="stat-value" style="font-size:1.8em;">1,319</span><span class="stat-label" style="font-size:0.55em;">runtime assertions in production</span></div>
-        <div class="stat" style="padding:12px;"><span class="stat-value" style="font-size:1.8em;">0</span><span class="stat-label" style="font-size:0.55em;">silent bugs possible</span></div>
-      </div>
-      <table class="check-table" style="margin-top:12px;font-size:0.55em;">
-        <thead><tr><th>Compiler Module</th><th>Checks</th><th>Example Diagnostics</th></tr></thead>
-        <tbody>
-          <tr><td>Early Semantic Analysis</td><td><strong>189</strong></td><td>type mismatch, invalid parallel nesting</td></tr>
-          <tr><td>Semantic Validation</td><td><strong>65</strong></td><td>inconsistent shapes, invalid DMA target</td></tr>
-          <tr><td>Type Inference</td><td><strong>38</strong></td><td>conflicting types in reduction</td></tr>
-          <tr><td>Shape Inference</td><td><strong>33</strong></td><td>tiling factor exceeds data size</td></tr>
-          <tr><td>Loop Vectorization</td><td><strong>16</strong></td><td>vectorize factor not divisible</td></tr>
-          <tr><td>Static Assessment</td><td><strong>4</strong></td><td>shape incompatibility proven at compile time</td></tr>
-          <tr><td>Code Generation</td><td><strong>8</strong></td><td>architecture constraint violated, DMA &gt; 2&sup3;&sup2;</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div>
-      <div class="editor-showcase editor-compact" data-tabs='[
-        {"file":"earlysema.cpp","badge":"189","label":"Early Semantic Analysis — 189 checks","lang":"text","code":"// type mismatch in SELECT\nerror: SELECT factor type must match\n  the operand type.\n\n// invalid parallel nesting\nerror: parallel-by nesting exceeds\n  maximum depth for target architecture.\n\n// undeclared variable in __co__ scope\nerror: undeclared identifier in\n  __co__ function scope.\n\n// invalid storage qualifier\nerror: shared memory cannot be\n  declared outside parallel block."},
-        {"file":"semacheck.cpp","badge":"65","label":"Semantic Validation — 65 checks","lang":"text","code":"// inconsistent shapes for spanned-op\nerror: DMA statement has a rank\n  mismatch between from and to: 3 != 4.\n\n// invalid DMA target memory space\nerror: DMA target must be shared or\n  local memory, got global.\n\n// MMA shape mismatch\nerror: MMA matrix shapes do not match\n  the accumulator dimensions.\n\n// DMA buffer too small\nerror: DMA to-buffer is too small\n  ((expr) > (expr))."},
-        {"file":"shapeinfer.cpp","badge":"33","label":"Shape Inference — 33 checks","lang":"text","code":"// tiling factor exceeds data size\nerror: tiling factor 128 exceeds\n  dimension size 64.\n\n// index out of bounds\nerror: index out of bounds for\n  dimension 1 (7 >= 2).\n\n// span size mismatch in chunkat\nerror: chunkat tile shape does not\n  divide evenly into source shape.\n\n// offset out of bounds\nerror: offset out of bounds for\n  dimension 0 (101 >= 14)."},
-        {"file":"codegen","badge":"8","label":"Code Generation — 8 checks","lang":"text","code":"// target architecture constraint\nerror: MMA [f16: m32n32k32] is not\n  supported by current architecture\n  (SM_86).\n\n// DMA size exceeds hardware limit\nerror: The size of data transferred\n  by DMA cannot exceed 2^32 bytes.\n\n// incompatible swizzle mode\nerror: swizzle mode 256 is not\n  supported for element type f8_e4m3."}
       ]'></div>
     </div>
   </div>
@@ -1055,24 +672,16 @@
   <div class="website-split" style="grid-template-columns:0.82fr 1.18fr;">
     <div class="claims">
       <div class="claim-item">
-        <span class="claim-icon" style="background:#dbeafe;">&#x1F524;</span>
-        <span><strong>Named symbolic dims</strong> &mdash; <code>M</code>, <code>K</code>, <code>N</code> are first-class symbols; same symbol across params encodes a shared relationship</span>
+        <span><strong>The problem:</strong> real workloads have dynamic M, N, K — but competitors require tile sizes to be compile-time constants. One kernel per shape = combinatorial explosion.</span>
       </div>
       <div class="claim-item">
-        <span class="claim-icon" style="background:#fef3c7;">&#x2699;</span>
-        <span><strong>Affine expressions</strong> &mdash; <code>cdiv(M,64)</code>, <code>K/2</code>, <code>M/up</code>, <code>seg_end - seg_start</code> all work as symbolic values</span>
+        <span><strong>CroqTile solution:</strong> entry dims (M, K, N) are first-class symbols. Internal shapes like <code>cdiv(M, 64)</code> or <code>K/2</code> are derived expressions — fully symbolic, resolved at launch.</span>
       </div>
       <div class="claim-item">
-        <span class="claim-icon" style="background:#dcfce9;">&#x1F9E0;</span>
-        <span><strong>Shape inference</strong> &mdash; compiler propagates symbols, infers <code>output[M,N]</code> from <code>lhs[M,K]</code> &times; <code>rhs[K,N]</code></span>
+        <span><strong>Compiler tracks everything:</strong> propagates symbols across parameters, infers output shapes, auto-generates runtime checks, and handles tail (remainder) masking.</span>
       </div>
       <div class="claim-item">
-        <span class="claim-icon" style="background:#ede9fe;">&#x1F517;</span>
-        <span><strong>Cross-param relationships</strong> &mdash; <code>where k &lt;-&gt; k1</code> declares constraints; compiler uses them to optimize</span>
-      </div>
-      <div class="claim-item">
-        <span class="claim-icon" style="background:#fee2e2;">&#x1F3AF;</span>
-        <span><strong>Auto tail handling</strong> &mdash; dynamic remainder auto-generates predicated copies with zero-fill</span>
+        <span><strong>Result:</strong> one kernel source handles all shapes. No code duplication, no shape-specific specialization needed.</span>
       </div>
     </div>
     <div>
@@ -1117,31 +726,22 @@
   <div class="website-split" style="grid-template-columns:0.82fr 1.18fr;">
     <div class="claims">
       <div class="claim-item">
-        <span class="claim-icon" style="background:#dcfce9;">&#x1F4E6;</span>
-        <span><strong><code>chunkat</code></strong> &mdash; tile into fixed-size chunks by index. Best for <strong>regular grids</strong>: each block processes one tile</span>
+        <span><strong>The problem:</strong> GPU memory access patterns vary widely — regular tiling, TMA-required shapes, MoE/irregular offsets, layout reshapes. CUDA requires manual pointer math for each.</span>
       </div>
       <div class="claim-item">
-        <span class="claim-icon" style="background:#dbeafe;">&#x1F4CF;</span>
-        <span><strong><code>subspan/at</code></strong> &mdash; sub-view with explicit tile shape + tile index. Best for <strong>TMA copies</strong> where shape must be declared upfront</span>
+        <span><strong><code>chunkat</code></strong> &mdash; tile by index, shape inferred from destination. Regular grids.</span>
       </div>
       <div class="claim-item">
-        <span class="claim-icon" style="background:#fef3c7;">&#x1F50D;</span>
-        <span><strong><code>view/from</code></strong> &mdash; dynamic window with arbitrary offset. Best for <strong>irregular access</strong>: MoE segments, variable-length seqs</span>
+        <span><strong><code>subspan/at</code></strong> &mdash; explicit tile shape + index. TMA-friendly declarations.</span>
       </div>
       <div class="claim-item">
-        <span class="claim-icon" style="background:#ede9fe;">&#x1F504;</span>
-        <span><strong><code>span_as</code></strong> &mdash; reshape without copy. Best for <strong>reinterpreting layouts</strong>: collapse batch dim, reshape for MMA</span>
+        <span><strong><code>view/from</code></strong> &mdash; dynamic offset window. Irregular access (MoE, variable-length).</span>
       </div>
       <div class="claim-item">
-        <span class="claim-icon" style="background:#fee2e2;">&#x1F517;</span>
-        <span><strong><code>#</code> operator</strong> &mdash; hierarchical index composition. Combines block + warp + thread indices into a single global index</span>
+        <span><strong><code>span_as</code> / <code>#</code></strong> &mdash; reshape without copy, hierarchical index composition.</span>
       </div>
-      <div class="cuda-compare">
-        <h4 style="margin-top:4px;">In CUDA</h4>
-        <ul style="font-size:0.65em;margin-top:0;">
-          <li>Manual pointer arithmetic for every access pattern</li>
-          <li>No bounds checking &mdash; off-by-one = silent corruption</li>
-        </ul>
+      <div class="claim-item">
+        <span><strong>All bounds-checked</strong> &mdash; compiler validates offsets statically or inserts runtime guards. No silent corruption.</span>
       </div>
     </div>
     <div>
