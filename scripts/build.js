@@ -26,7 +26,8 @@ function findDecks() {
 
 function resolveLocalPath(href, baseDir) {
   if (/^https?:\/\//.test(href) || href.startsWith('data:')) return null;
-  const resolved = path.resolve(baseDir, href);
+  const decoded = decodeURIComponent(href);
+  const resolved = path.resolve(baseDir, decoded);
   return fs.existsSync(resolved) ? resolved : null;
 }
 

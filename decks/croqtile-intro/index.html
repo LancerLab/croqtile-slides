@@ -46,7 +46,7 @@
     <li><a href="#/2"><span class="toc-num"></span><span class="toc-title">What is CroqTile?</span></a></li>
     <li><a href="#/3"><span class="toc-num">01</span><span class="toc-title">Highlight 1: Simplicity + Performance</span></a></li>
     <li><a href="#/12"><span class="toc-num">02</span><span class="toc-title">Highlight 2: Compile-Time Code Safety</span></a></li>
-    <li><a href="#/15"><span class="toc-num">03</span><span class="toc-title">Highlight 3: Dynamic / Symbolic Shape Support</span></a></li>
+    <li><a href="#/15"><span class="toc-num">03</span><span class="toc-title">Highlight 3: Support for Heterogeneous Computing</span></a></li>
     <li><a href="#/18"><span class="toc-num">04</span><span class="toc-title">Highlight 4: Born for Agentic AI Programming</span></a></li>
   </ul>
 </section>
@@ -75,7 +75,7 @@
       <h3><span class="feature-icon">🛡️</span> Compile-Time Safety</h3>
     </div>
     <div class="feature-card">
-      <h3><span class="feature-icon">🔷</span> Dynamic / Symbolic Shapes</h3>
+      <h3><span class="feature-icon">🔷</span> Heterogeneous Computing</h3>
     </div>
     <div class="feature-card">
       <h3><span class="feature-icon">🤖</span> Born for AI Agents</h3>
@@ -650,113 +650,142 @@
 <!-- ═══════════════════════════════════════════════════════ -->
 <section class="chapter" data-background-color="#d1fae5">
   <h4>Chapter 3</h4>
-  <h2>Highlight 3: Dynamic / Symbolic Shape Support</h2>
-  <p>First of its kind — best of all competitors</p>
+  <h2>Highlight 3: Support for Heterogeneous Computing</h2>
+  <p>Write once, run everywhere — GPU, AMD, DSA &amp; multi-device</p>
 </section>
 
 <!-- ═══════════════════════════════════════════════════════ -->
-<!-- SLIDE 15: Dynamic / Symbolic Shapes                    -->
+<!-- SLIDE: Write Once, Run Everywhere                      -->
 <!-- ═══════════════════════════════════════════════════════ -->
 <section class="dense">
   <div class="slide-header">
     <img src="../../assets/images/logo%202%20new.png" alt="">
     <span class="header-title">CroqTile</span>
     <span class="header-sep">|</span>
-    <span class="header-section">Chapter 3 — Dynamic Shapes</span>
+    <span class="header-section">Chapter 3 — Heterogeneous Computing</span>
   </div>
   <div class="slide-footer">
     <span class="footer-brand">CroqTile — The Next-Gen GPU &amp; DSA Language</span>
     <span class="footer-right">github.com/croqtile</span>
   </div>
-  <h2>Symbolic Dimensions &amp; Compile-Time Reasoning</h2>
-  <div class="website-split" style="grid-template-columns:0.82fr 1.18fr;">
-    <div class="claims">
-      <div class="claim-item">
-        <span><strong>The problem:</strong> real workloads have dynamic M, N, K — but competitors require tile sizes to be compile-time constants. One kernel per shape = combinatorial explosion.</span>
-      </div>
-      <div class="claim-item">
-        <span><strong>CroqTile solution:</strong> entry dims (M, K, N) are first-class symbols. Internal shapes like <code>cdiv(M, 64)</code> or <code>K/2</code> are derived expressions — fully symbolic, resolved at launch.</span>
-      </div>
-      <div class="claim-item">
-        <span><strong>Compiler tracks everything:</strong> propagates symbols across parameters, infers output shapes, auto-generates runtime checks, and handles tail (remainder) masking.</span>
-      </div>
-      <div class="claim-item">
-        <span><strong>Result:</strong> one kernel source handles all shapes. No code duplication, no shape-specific specialization needed.</span>
-      </div>
-    </div>
-    <div>
-      <div class="editor-showcase editor-compact" data-tabs='[
-        {"file":"Named Dims","badge":"CROQTILE","label":"matmul — shared K across params","lang":"choreo","code":"@@__co__ void matmul(@@\n@@    global f16 [M, K] lhs,@@\n@@    global f16 [N, K] rhs,@@\n@@    global f16 [M, N] output) {@@\n  // M, N, K are symbolic — resolved at runtime\n  // K appears in both lhs and rhs: shared dim\n  // output shape [M, N] inferred automatically\n\n@@  parallel {block_m, block_n}@@\n@@    by [cdiv(M, WARP_M), cdiv(N, WARP_N)]@@\n    : block {\n    shared f16 [WARP_M, TILE_K] lhs_s;\n    shared f16 [WARP_N, TILE_K] rhs_s;\n    mc = mma.fill.f32 0.0f;\n@@    foreach {iv_k} in [cdiv(K, TILE_K)] {@@\n      tma.copy.swiz<128>\n        lhs.subspan(WARP_M, TILE_K)\n          .at(block_m, iv_k) => lhs_s;\n      // ...\n    }\n  }\n}\n// Compiler infers:\n//   block_m bounded by [cdiv(M, 64)]\n//   iv_k bounded by [cdiv(K, 64)]"},
-        {"file":"Affine Derived","badge":"CROQTILE","label":"spmm — derived dims PACKED_K, META_COLS","lang":"choreo","code":"@@__co__ void spmm(@@\n@@    global f8 [M, PACKED_K] lhs_packed,@@\n@@    global u8 [M, META_COLS] lhs_meta,@@\n@@    global f8 [N, K] rhs,@@\n@@    global f16 [M, N] output) {@@\n  // PACKED_K = K/2 (2:4 sparsity)\n  // META_COLS = K/8 (metadata)\n  // Compiler tracks all relationships\n\n  parallel {block_m, block_n}\n    by [cdiv(M, TILE_M), cdiv(N, WARP_N)]\n    : block {\n@@    foreach {iv_k} in [cdiv(K, TILE_K)] {@@\n      tma.copy.swiz<32>\n        lhs_packed.subspan(TILE_M, PACKED_TILE_K)\n          .at(block_m, iv_k) => sA;\n      tma.copy.swiz<128>\n        rhs.subspan(WARP_N, TILE_K)\n          .at(block_n, iv_k) => sB;\n      // K indexes both packed and dense\n    }\n  }\n}"},
-        {"file":"Relationships","badge":"CROQTILE","label":"dyn_matmul — where k <-> k1","lang":"choreo","code":"@@__co__ auto matmul(@@\n@@    s32 [512, ?] lhs, s32 [?, ?] rhs) {@@\n  // ? = unbounded (runtime-only) dim\n@@  s32[lhs.span(0), rhs.span(1)] output;@@\n  // output shape derived from input spans\n\n  parallel p by 1 {\n@@    with index = {m, k} in lhs.span / {8, 1024},@@\n@@         {k1, n} in rhs.span / {1024, 128}@@\n@@    where k <-> k1 {@@\n      // k and k1 iterate in lockstep\n      // Compiler verifies lhs dim1 == rhs dim0\n      foreach m {\n        foreach n {\n          foreach k {\n            lhs_t = dma.copy\n              lhs.chunkat(m, k) => local;\n            rhs_t = dma.copy\n              rhs.chunkat(k, n) => local;\n            // ...\n          }\n        }\n      }\n    }\n  }\n  return output;\n}"},
-        {"file":"Batched","badge":"CROQTILE","label":"bmm — batch dim B shared across all","lang":"choreo","code":"@@__co__ void bmm(@@\n@@    global bf16 [B, M, K] lhs,@@\n@@    global bf16 [B, N, K] rhs,@@\n@@    global f32  [B, M, N] output) {@@\n  // B is batch dim, shared across all 3 params\n  // M, N, K are contraction dims\n\n@@  parallel {block_b, block_m, block_n}@@\n@@    by [B, cdiv(M, WARP_M), cdiv(N, WARP_N)]@@\n    : block {\n    shared bf16 [1, WARP_M, TILE_K] lhs_s;\n    shared bf16 [1, WARP_N, TILE_K] rhs_s;\n\n    foreach {iv_k} in [cdiv(K, TILE_K)] {\n      tma.copy.swiz<128>\n        lhs.subspan(1, WARP_M, TILE_K)\n@@          .at(block_b, block_m, iv_k)@@\n            => lhs_s;\n      // block_b selects batch slice\n      // same symbol B in all params\n    }\n  }\n}"},
-        {"file":"Tail Handling","badge":"CROQTILE","label":"copy_if — auto predicated copies","lang":"choreo","code":"@@__co__ void test(f16 [M, K] input) {@@\n  parallel {bm, bk}\n    by [cdiv(M, 64), cdiv(K, 64)] : block {\n    shared f16 [64, 64] s_tail;\n\n@@    base_m = bm * 64;@@\n@@    remain_m = M - base_m;@@\n@@    TM = (64 < remain_m) ? 64 : remain_m;@@\n\n@@    dma.copy.swiz<128>.zfill@@\n@@      input.view(64, 64).from(base_m, 0)@@\n@@        => s_tail.subspan(TM, 64);@@\n    // Compiler generates:\n    //   copy_if(coord, make_shape(\n    //     64 < M - blockIdx.x*64\n    //       ? Int<64>{}\n    //       : M - blockIdx.x*Int<64>{},\n    //     Int<64>{}));\n    // Zero-fill for out-of-bounds elements\n    // No manual masking needed!\n  }\n}"},
-        {"file":"Shape Inference","badge":"INFERRED","label":"named_dims.co — compiler output","lang":"text","code":"// Source:\n//   __co__ auto matmul(\n//     s32 [M, K] lhs, s32 [K, N] rhs)\n//   s32[lhs.span(0), rhs.span(1)] output;\n\n// Compiler infers types:\n@@Parameter: lhs@@\n@@  Type: s32 mdspan<2> [M, K]@@\n@@Parameter: rhs@@\n@@  Type: s32 mdspan<2> [K, N]@@\n@@Symbol: output@@\n@@  Type: global s32 mdspan<2> [M, N]@@\n\n// Tiling inference:\n@@Bounded: index@@\n@@  Type: {int,int,int}@@\n@@  -> [(M/8), (K/1024), (N/128)]@@\n\n// Chunk shape inference:\n@@Future: lhs_load@@\n@@  Type: sync => local s32 mdspan<2> [8, 1024]@@\n@@Future: rhs_load@@\n@@  Type: sync => local s32 mdspan<2> [1024, 128]@@\n\n// Function signature:\n@@Function: matmul@@\n@@  Type: s32 mdspan<2> [M, N]@@\n@@    (*)(s32 [M, K], s32 [K, N])@@"}
-      ]'></div>
-      <table class="check-table" style="margin-top:6px;font-size:0.55em;">
-        <thead><tr><th>Capability</th><th>CroqTile</th><th>Triton</th><th>TileLang</th><th>CuTe</th><th>CUDA</th></tr></thead>
-        <tbody>
-          <tr><td>Dynamic shapes</td><td class="check-yes">&#x2713;</td><td class="check-yes">&#x2713;</td><td class="check-no">&mdash;</td><td class="check-yes">&#x2713;</td><td class="check-yes">&#x2713;</td></tr>
-          <tr><td>Named symbols</td><td class="check-yes">&#x2713;</td><td class="check-no">&mdash;</td><td class="check-no">&mdash;</td><td class="check-no">&mdash;</td><td class="check-no">&mdash;</td></tr>
-          <tr><td>Affine expressions</td><td class="check-yes">&#x2713;</td><td class="check-no">&mdash;</td><td class="check-no">&mdash;</td><td class="check-no">&mdash;</td><td class="check-no">&mdash;</td></tr>
-          <tr><td>Cross-param constraints</td><td class="check-yes">&#x2713;</td><td class="check-no">&mdash;</td><td class="check-no">&mdash;</td><td class="check-no">&mdash;</td><td class="check-no">&mdash;</td></tr>
-          <tr><td>Compile-time inference</td><td class="check-yes">&#x2713;</td><td class="check-no">&mdash;</td><td class="check-no">&mdash;</td><td class="check-no">&mdash;</td><td class="check-no">&mdash;</td></tr>
-          <tr><td>Auto runtime checks</td><td class="check-yes">&#x2713;</td><td class="check-no">&mdash;</td><td class="check-no">&mdash;</td><td class="check-no">&mdash;</td><td class="check-no">&mdash;</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════ -->
-<!-- SLIDE 16: Memory Access Primitives                     -->
-<!-- ═══════════════════════════════════════════════════════ -->
-<section class="dense">
-  <div class="slide-header">
-    <img src="../../assets/images/logo%202%20new.png" alt="">
-    <span class="header-title">CroqTile</span>
-    <span class="header-sep">|</span>
-    <span class="header-section">Chapter 3 — Dynamic Shapes</span>
-  </div>
-  <div class="slide-footer">
-    <span class="footer-brand">CroqTile — The Next-Gen GPU &amp; DSA Language</span>
-    <span class="footer-right">github.com/croqtile</span>
-  </div>
-  <h2>Flexible Memory Access Primitives</h2>
-  <div class="website-split" style="grid-template-columns:0.82fr 1.18fr;">
-    <div class="claims">
-      <div class="claim-item">
-        <span><strong>The problem:</strong> GPU memory access patterns vary widely — regular tiling, TMA-required shapes, MoE/irregular offsets, layout reshapes. CUDA requires manual pointer math for each.</span>
-      </div>
-      <div class="claim-item">
-        <span><strong><code>chunkat</code></strong> &mdash; tile by index, shape inferred from destination. Regular grids.</span>
-      </div>
-      <div class="claim-item">
-        <span><strong><code>subspan/at</code></strong> &mdash; explicit tile shape + index. TMA-friendly declarations.</span>
-      </div>
-      <div class="claim-item">
-        <span><strong><code>view/from</code></strong> &mdash; dynamic offset window. Irregular access (MoE, variable-length).</span>
-      </div>
-      <div class="claim-item">
-        <span><strong><code>span_as</code> / <code>#</code></strong> &mdash; reshape without copy, hierarchical index composition.</span>
-      </div>
-      <div class="claim-item">
-        <span><strong>All bounds-checked</strong> &mdash; compiler validates offsets statically or inserts runtime guards. No silent corruption.</span>
-      </div>
-    </div>
-    <div>
+  <h2>Write Once, Run Everywhere</h2>
+  <div style="display:flex; align-items:center; justify-content:center; gap:32px; margin-top:18px;">
+    <!-- Left: CroqTile source code -->
+    <div style="min-width:380px;">
       <div class="editor-showcase" data-tabs='[
-        {"file":"chunkat","badge":"CROQTILE","label":"regular tiling — fixed-size chunks","lang":"choreo","code":"// chunkat: tile by coordinate index\n// Each block processes one [WARP_M, TILE_K] chunk\n\n@@tma.copy.swiz<128>@@\n@@  lhs.chunkat(block_m, iv_k)@@\n@@    => lhs_load_s;@@\n\n@@tma.copy.swiz<128>@@\n@@  rhs.chunkat(block_n, iv_k)@@\n@@    => rhs_load_s;@@\n\n// Tile shape inferred from destination\n// block_m, iv_k are bounded tile indices\n// No manual offset computation needed"},
-        {"file":"subspan/at","badge":"CROQTILE","label":"explicit sub-view — TMA-friendly","lang":"choreo","code":"// subspan: declare tile shape explicitly\n// at: index into tile grid\n\n@@tma.copy.swiz<128>@@\n@@  lhs.subspan(WARP_M, TILE_K)@@\n@@    .at(block_m, iv_k) => lhs_s;@@\n\n// Store result back via subspan\n@@tma.copy output_s@@\n@@  => output.subspan(WARP_M, WARP_N)@@\n@@       .at(block_m, block_n);@@\n\n// step variant: strided access\ntma.copy lhs.subspan(TILE_M, TILE_K)\n  .step(STRIDE_M, 1).at(block_m, iv_k)\n    => lhs_s;"},
-        {"file":"view/from","badge":"CROQTILE","label":"dynamic window — MoE, irregular access","lang":"choreo","code":"// view/from: arbitrary dynamic offset\n// MoE: each expert has variable segment\n\ns32 seg_start = expert_offsets.at(eid);\ns32 seg_end = expert_offsets.at(eid + 1);\ns32 seg_length = seg_end - seg_start;\n\n@@dma.copy.swiz<128>.zfill@@\n@@  lhs.view(WARP_M, TILE_K)@@\n@@    .from(seg_start + iv_m * WARP_M,@@\n@@          iv_k * TILE_K)@@\n@@    => sA.subspan(TILE_M, TILE_K);@@\n\n// .zfill: zero-fill out-of-bounds\n// Dynamic offsets from runtime values\n// No manual boundary clamp needed"},
-        {"file":"span_as / #","badge":"CROQTILE","label":"reshape + hierarchical index","lang":"choreo","code":"// span_as: reshape without copy\n// Collapse batch dim for MMA load\n@@ma = mma.load.swiz<128>@@\n@@  lhs_s.span_as([WARP_M, TILE_K])@@\n@@    .chunkat(_, iv_warp);@@\n\n// # operator: hierarchical index\n// Composes block + warp + thread\n@@output.at(@@\n@@  block_b,@@\n@@  block_m # m,@@\n@@  block_n # (n # ni)@@\n@@) += result;@@\n\n// Equivalent CUDA:\n// output[block_b]\n//   [block_m*WM + m]\n//   [block_n*WN + n*NI + ni]"}
+        {"file":"matmul.co","badge":"CROQTILE","label":"same source for all targets","lang":"choreo","code":"__co__ void matmul(\n    global f16 [M, K] lhs,\n    global f16 [N, K] rhs,\n    global f16 [M, N] output) {\n  parallel {block_m, block_n}\n    by [cdiv(M, WARP_M), cdiv(N, WARP_N)]\n    : block {\n    shared f16 [WARP_M, TILE_K] lhs_s;\n    mc = mma.fill.f32 0.0f;\n    foreach {iv_k} in [cdiv(K, TILE_K)] {\n      tma.copy.swiz<128>\n        lhs.subspan(WARP_M, TILE_K)\n          .at(block_m, iv_k) => lhs_s;\n      mma.row.row mc, ma, mb;\n    }\n  }\n}"}
       ]'></div>
+    </div>
+    <!-- Middle: Arrows with -t targets -->
+    <div style="display:flex; flex-direction:column; gap:16px; align-items:center;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="font-size:0.50em; color:#34d399; font-weight:700; font-family:monospace; background:#0f172a; padding:4px 10px; border-radius:6px; border:1px solid rgba(52,211,153,0.3);">-t cute -arch=sm_90a</div>
+        <div style="font-size:1.2em; color:#34d399;">&rarr;</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="font-size:0.50em; color:#22d3ee; font-weight:700; font-family:monospace; background:#0f172a; padding:4px 10px; border-radius:6px; border:1px solid rgba(34,211,238,0.3);">-t cute -arch=sm_80</div>
+        <div style="font-size:1.2em; color:#22d3ee;">&rarr;</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="font-size:0.50em; color:#f97316; font-weight:700; font-family:monospace; background:#0f172a; padding:4px 10px; border-radius:6px; border:1px solid rgba(249,115,22,0.3);">-t gfx942</div>
+        <div style="font-size:1.2em; color:#f97316;">&rarr;</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="font-size:0.50em; color:#f472b6; font-weight:700; font-family:monospace; background:#0f172a; padding:4px 10px; border-radius:6px; border:1px solid rgba(244,114,182,0.3);">-t dsa_x</div>
+        <div style="font-size:1.2em; color:#f472b6;">&rarr;</div>
+      </div>
+    </div>
+    <!-- Right: Target devices -->
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <div style="padding:12px 18px; border-radius:10px; background:linear-gradient(135deg,#ecfdf5,#d1fae5); border:1.5px solid #34d399; min-width:220px;">
+        <div style="font-size:0.58em; font-weight:800; color:#166534;">NVIDIA H800 / H100</div>
+        <div style="font-size:0.46em; color:#6b7280;">Hopper SM90a (PTX + SASS)</div>
+      </div>
+      <div style="padding:12px 18px; border-radius:10px; background:linear-gradient(135deg,#ecfeff,#cffafe); border:1.5px solid #22d3ee; min-width:220px;">
+        <div style="font-size:0.58em; font-weight:800; color:#155e75;">NVIDIA A100</div>
+        <div style="font-size:0.46em; color:#6b7280;">Ampere SM80 (PTX + SASS)</div>
+      </div>
+      <div style="padding:12px 18px; border-radius:10px; background:linear-gradient(135deg,#fff7ed,#ffedd5); border:1.5px solid #f97316; min-width:220px;">
+        <div style="font-size:0.58em; font-weight:800; color:#9a3412;">AMD MI300</div>
+        <div style="font-size:0.46em; color:#6b7280;">gfx942 (AMDGPU ISA)</div>
+      </div>
+      <div style="padding:12px 18px; border-radius:10px; background:linear-gradient(135deg,#fdf2f8,#fce7f3); border:1.5px solid #f472b6; min-width:220px;">
+        <div style="font-size:0.58em; font-weight:800; color:#9d174d;">Custom DSA</div>
+        <div style="font-size:0.46em; color:#6b7280;">Pluggable backend architecture</div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:18px; text-align:center; font-size:0.54em; color:var(--fg-secondary); max-width:700px; margin-left:auto; margin-right:auto;">
+    <strong style="color:#166534;">Same source &rarr; different targets</strong> &mdash; the compiler lowers CroqTile IR to each backend's native ISA. No code rewrite required.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SLIDE: Multi-Device Programming                        -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section class="dense">
+  <div class="slide-header">
+    <img src="../../assets/images/logo%202%20new.png" alt="">
+    <span class="header-title">CroqTile</span>
+    <span class="header-sep">|</span>
+    <span class="header-section">Chapter 3 — Heterogeneous Computing</span>
+  </div>
+  <div class="slide-footer">
+    <span class="footer-brand">CroqTile — The Next-Gen GPU &amp; DSA Language</span>
+    <span class="footer-right">github.com/croqtile</span>
+  </div>
+  <h2>Multi-Device Programming</h2>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px; align-items:start;">
+    <!-- Left: Code with yellow highlights -->
+    <div>
+      <div class="editor-showcase pattern-showcase" data-tabs='[
+        {"file":"distributed_matmul.co","badge":"SPMD","label":"data-parallel via MPI — same kernel, scaled across nodes","lang":"choreo","code":"__co__ void matmul(\n    global f16 [M, K] lhs,\n    global f16 [N, K] rhs,\n    global f16 [M, N] output) {\n\n  // Outer: distribute across nodes\n@@  parallel {node_m, node_n}@@\n@@    by [cdiv(M, NODE_M), cdiv(N, NODE_N)]@@\n@@    : mpi {@@\n\n    // Inner: GPU kernel per node (unchanged)\n    parallel {bm, bn}\n      by [cdiv(NODE_M, WARP_M),\n          cdiv(NODE_N, WARP_N)]\n      : block {\n      mc = mma.fill.f32 0.0f;\n      foreach {iv_k} in [cdiv(K, TILE_K)] {\n        tma.copy.swiz<128> ...;\n        mma.row.row mc, ma, mb;\n      }\n    }\n@@  }@@\n}"}
+      ]'></div>
+    </div>
+    <!-- Right: Diagram + bullet points -->
+    <div style="display:flex; flex-direction:column; align-items:center; gap:10px;">
+      <!-- Matrix partition diagram showing node_m × node_n grid -->
+      <div style="width:100%; padding:12px; border-radius:10px; background:#f8fafc; border:1px solid #e2e8f0;">
+        <div style="font-size:0.52em; font-weight:700; color:var(--fg); text-align:center; margin-bottom:8px;">matmul [M, N] &rarr; partitioned by <span style="color:#166534;">parallel-by mpi</span></div>
+        <!-- 2x2 grid showing node_m × node_n decomposition -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:0 auto; max-width:90%;">
+          <div style="padding:10px 8px; border-radius:8px; background:#ecfdf5; border:1.5px solid #34d399; text-align:center;">
+            <div style="font-size:0.62em; font-weight:700; color:#166534;">Node (0,0)</div>
+            <div style="font-size:0.40em; color:#6b7280; margin-top:2px;">M[0:M/2] × N[0:N/2]</div>
+            <div style="font-size:0.36em; color:#94a3b8; margin-top:1px;">GPU 0 &middot; block kernel</div>
+          </div>
+          <div style="padding:10px 8px; border-radius:8px; background:#ecfdf5; border:1.5px solid #34d399; text-align:center;">
+            <div style="font-size:0.62em; font-weight:700; color:#166534;">Node (0,1)</div>
+            <div style="font-size:0.40em; color:#6b7280; margin-top:2px;">M[0:M/2] × N[N/2:N]</div>
+            <div style="font-size:0.36em; color:#94a3b8; margin-top:1px;">GPU 1 &middot; block kernel</div>
+          </div>
+          <div style="padding:10px 8px; border-radius:8px; background:#ecfdf5; border:1.5px solid #34d399; text-align:center;">
+            <div style="font-size:0.62em; font-weight:700; color:#166534;">Node (1,0)</div>
+            <div style="font-size:0.40em; color:#6b7280; margin-top:2px;">M[M/2:M] × N[0:N/2]</div>
+            <div style="font-size:0.36em; color:#94a3b8; margin-top:1px;">GPU 2 &middot; block kernel</div>
+          </div>
+          <div style="padding:10px 8px; border-radius:8px; background:#ecfdf5; border:1.5px solid #34d399; text-align:center;">
+            <div style="font-size:0.62em; font-weight:700; color:#166534;">Node (1,1)</div>
+            <div style="font-size:0.40em; color:#6b7280; margin-top:2px;">M[M/2:M] × N[N/2:N]</div>
+            <div style="font-size:0.36em; color:#94a3b8; margin-top:1px;">GPU 3 &middot; block kernel</div>
+          </div>
+        </div>
+      </div>
+      <!-- Bullet points - larger font -->
+      <div style="padding:10px 14px; border-radius:8px; background:rgba(52,211,153,0.06); border:1px solid rgba(52,211,153,0.15); width:100%;">
+        <div style="font-size:0.56em; color:var(--fg-secondary); line-height:1.6;">
+          <strong style="color:#166534;">Few boilerplate for heterogeneous computing:</strong><br/>
+          &#x2022; Kernel launch &mdash; compiler generates host dispatch<br/>
+          &#x2022; Type conversion &amp; alignments &mdash; handled automatically<br/>
+          &#x2022; Data partitioning &mdash; <code style="background:#ecfdf5; padding:1px 4px; border-radius:3px;">parallel-by mpi</code> splits work across ranks
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
 <!-- ═══════════════════════════════════════════════════════ -->
-<!-- SLIDE 17: Chapter 4 — AI                               -->
+<!-- SLIDE: Chapter 4 — AI                               -->
 <!-- ═══════════════════════════════════════════════════════ -->
 <section class="chapter" data-background-color="#dbeafe">
   <h4>Chapter 4</h4>
@@ -778,72 +807,144 @@
     <span class="footer-brand">CroqTile — The Next-Gen GPU &amp; DSA Language</span>
     <span class="footer-right">github.com/croqtile</span>
   </div>
-  <h2>Born for AI Tuning</h2>
-  <div class="feature-grid" style="grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin:6px 0 10px;">
-    <div class="feature-card" style="padding:8px 10px;">
-      <h3 style="font-size:0.55em;gap:5px;"><span class="feature-icon" style="background:#dcfce9;width:20px;height:20px;font-size:10px;">&#x2713;</span> Compact syntax for AI context</h3>
+  <h2>AI Tuning 收敛对比 <span style="font-size:0.52em; font-weight:500; color:var(--fg-light);">NVIDIA H800 PCIe · Template-Free · Same Agent</span></h2>
+
+  <div class="era-split" data-era="cq-bench">
+    <div class="era-left">
+      <div style="font-size:0.72em; color:var(--fg-secondary); line-height:1.6;">
+        同一 AI agent，同一硬件，同一 budget。<br>只有 <strong style="color:var(--fg);">语言 (DSL)</strong> 不同。<br>Y 轴 = running-best TFLOPS，虚线 = cuBLAS baseline。
+      </div>
+      <div class="era-feature-tabs">
+        <button class="era-tab active" data-target="cqb-f1"><span class="tab-icon">📐</span> matmul FP16 16384³</button>
+        <button class="era-tab" data-target="cqb-f2"><span class="tab-icon">🧊</span> blockscale E4M3 8192³</button>
+        <button class="era-tab" data-target="cqb-f4"><span class="tab-icon">📏</span> matmul 16384×512</button>
+        <button class="era-tab" data-target="cqb-f5"><span class="tab-icon">🔲</span> matmul 16416³</button>
+      </div>
     </div>
-    <div class="feature-card" style="padding:8px 10px;">
-      <h3 style="font-size:0.55em;gap:5px;"><span class="feature-icon" style="background:#dcfce9;width:20px;height:20px;font-size:10px;">&#x2713;</span> Error-prone configs hidden</h3>
-    </div>
-    <div class="feature-card" style="padding:8px 10px;">
-      <h3 style="font-size:0.55em;gap:5px;"><span class="feature-icon" style="background:#dcfce9;width:20px;height:20px;font-size:10px;">&#x2713;</span> CLI well-documented for agents</h3>
-    </div>
-    <div class="feature-card" style="padding:8px 10px;">
-      <h3 style="font-size:0.55em;gap:5px;"><span class="feature-icon" style="background:#dcfce9;width:20px;height:20px;font-size:10px;">&#x2713;</span> Compile-time guardrails</h3>
-    </div>
-  </div>
-  <div class="website-split" style="grid-template-columns:1.1fr 0.9fr;">
-    <div>
-      <div class="editor-showcase editor-compact" data-tabs='[
-        {"file":"AI Prompt","lang":"text","code":"User:\ncontinue experiment on branch\nai-tune/2026-03-24/gemm_sp_f16.\nRead two reference experiment branches:\n  branch 1: ai-tune/2026-03-21/gemm_sp_f16\n  branch 2: ai-tune/2026-03-21/gemm_sp_e4m3\nBranch 2 best can achieve over 1100 TFLOPS,\nbranch 1 best 600+ TFLOPS. Do not directly\ncopy — optimize stage over stage.\nKICK OFF EXPERIMENTS NOW."},
-        {"file":"AI Analysis","lang":"text","code":"AI reads reference branches and analyzes:\n\nKey insights from e4m3 branch (1128 TFLOPS):\n• TMA metadata staging: 671 → 760 (+13%)\n• Merged barrier:       760 → 767\n• Early empty signal:   767 → 772\n• SW pipelined wait<1>: 772 → 828\n• 1p2c warp spec:       828 → 895 (+9%)\n• 3-stage pipeline:     895 → 1188 (+24%)\n\nCurrent baseline: iter004 at 400.3 TFLOPS\nNCU bottleneck: Memory 67.9%, L1TEX 52.9%\nNext step: 1p2c warp specialization"},
-        {"file":"Iteration Loop","lang":"text","code":"iter105: 1p2c f16 accum → 403.4 TFLOPS\n  ✓ Verified, but only +0.8% over baseline\n  SMEM doubled (73KB → 147KB), hurts occupancy\n\niter107: uint2 metadata loads → 404.7 TFLOPS\n  ✓ Within noise of baseline — DISCARD\n  (false 131 TFLOPS reading = GPU contention)\n\niter109: Early empty signal → 419.2 TFLOPS\n  ✓ Verified, +4.7% — KEEP\n\niter110: SW pipelined metadata → 388 TFLOPS\n  ✗ Regression. WGMMA serialization — DISCARD"},
-        {"file":"Context Fit","lang":"text","code":"Why Croqtile fits AI tuning:\n\nKernel:    15 lines of .co  (vs 95 CUDA lines)\nContext:   412 characters    (fits in one window)\nCompiler:  4 safety checks   (auto-generated)\nOutput:    Structured errors  (AI can parse)\nCLI:       --verbose --arch=sm_90a (documented)\nHidden:    0 error-prone configs exposed\n\nAI iterates 68 times in one session,\nreaching 1127 TFLOPS from 671 baseline.\nEach iteration: edit .co → compile → run → NCU\nAverage cycle: ~3 minutes per iteration"}
-      ]'></div>
-      <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-top:6px;">
-        <p style="font-size:0.5em;font-weight:600;color:var(--fg-secondary);margin:0 0 4px;">results.tsv &mdash; e4m3 sparse GEMM, 68 iterations</p>
-        <div style="display:flex;flex-direction:column;gap:3px;">
-          <div style="display:flex;align-items:center;gap:5px;font-size:0.45em;"><span style="width:40px;text-align:right;color:var(--fg-secondary);">baseline</span><div style="height:14px;border-radius:3px;background:var(--mint-400);width:59%;display:flex;align-items:center;padding-left:5px;color:#fff;font-weight:700;font-size:0.9em;">671</div></div>
-          <div style="display:flex;align-items:center;gap:5px;font-size:0.45em;"><span style="width:40px;text-align:right;color:var(--fg-secondary);">iter001</span><div style="height:14px;border-radius:3px;background:var(--mint-500);width:67%;display:flex;align-items:center;padding-left:5px;color:#fff;font-weight:700;font-size:0.9em;">759</div></div>
-          <div style="display:flex;align-items:center;gap:5px;font-size:0.45em;"><span style="width:40px;text-align:right;color:var(--fg-secondary);">iter016</span><div style="height:14px;border-radius:3px;background:var(--mint-500);width:68%;display:flex;align-items:center;padding-left:5px;color:#fff;font-weight:700;font-size:0.9em;">772</div></div>
-          <div style="display:flex;align-items:center;gap:5px;font-size:0.45em;"><span style="width:40px;text-align:right;color:var(--fg-secondary);">iter023</span><div style="height:14px;border-radius:3px;background:var(--mint-600);width:72%;display:flex;align-items:center;padding-left:5px;color:#fff;font-weight:700;font-size:0.9em;">811</div></div>
-          <div style="display:flex;align-items:center;gap:5px;font-size:0.45em;"><span style="width:40px;text-align:right;color:var(--fg-secondary);">iter068</span><div style="height:14px;border-radius:3px;background:var(--mint-700);width:100%;display:flex;align-items:center;padding-left:5px;color:#fff;font-weight:700;font-size:0.9em;">1127</div></div>
+    <div class="era-right" style="border:1px solid #d7e2f0; background:linear-gradient(180deg, #fbfdff 0%, #f1f6ff 100%); border-radius:12px;">
+      <!-- Tab 1: matmul -->
+      <div class="era-feature-panel active" id="cqb-f1">
+        <div class="cq-panel" style="gap:10px;">
+          <h4>matmul FP16→FP32 · 16384³</h4>
+          <img src="../../assets/images/cq-chart-matmul-f16fp32-16384.svg" alt="Convergence: CroqTile 486, Triton 384, TileLang 343, Helion 318, CUDA 162, CuTe-DSL 27" style="width:100%; height:auto; border-radius:6px;">
+          <div style="display:grid; grid-template-columns:repeat(6, 1fr); gap:4px; font-size:0.78em;">
+            <div style="text-align:center; padding:5px 3px; border-radius:6px; background:rgba(52,211,153,0.1);">
+              <div style="font-weight:800; color:#34d399; font-family:'JetBrains Mono',monospace;">486</div>
+              <div style="font-size:0.75em; color:#6b7280;">CroqTile</div>
+            </div>
+            <div style="text-align:center; padding:5px 3px; border-radius:6px; background:rgba(129,140,248,0.1);">
+              <div style="font-weight:800; color:#818cf8; font-family:'JetBrains Mono',monospace;">384</div>
+              <div style="font-size:0.75em; color:#6b7280;">Triton</div>
+            </div>
+            <div style="text-align:center; padding:5px 3px; border-radius:6px; background:rgba(244,114,182,0.1);">
+              <div style="font-weight:800; color:#f472b6; font-family:'JetBrains Mono',monospace;">343</div>
+              <div style="font-size:0.75em; color:#6b7280;">TileLang</div>
+            </div>
+            <div style="text-align:center; padding:5px 3px; border-radius:6px; background:rgba(245,158,11,0.1);">
+              <div style="font-weight:800; color:#f59e0b; font-family:'JetBrains Mono',monospace;">318</div>
+              <div style="font-size:0.75em; color:#6b7280;">Helion</div>
+            </div>
+            <div style="text-align:center; padding:5px 3px; border-radius:6px; background:rgba(239,68,68,0.08);">
+              <div style="font-weight:800; color:#ef4444; font-family:'JetBrains Mono',monospace;">162</div>
+              <div style="font-size:0.75em; color:#6b7280;">CUDA</div>
+            </div>
+            <div style="text-align:center; padding:5px 3px; border-radius:6px; background:rgba(168,85,247,0.08);">
+              <div style="font-weight:800; color:#a855f7; font-family:'JetBrains Mono',monospace;">27</div>
+              <div style="font-size:0.75em; color:#6b7280;">CuTe-DSL</div>
+            </div>
+          </div>
+          <div style="font-size:0.72em; color:#6b7280; text-align:center;">cuBLAS baseline: 420 TFLOPS · CroqTile = <strong style="color:#34d399;">115%</strong> of vendor</div>
         </div>
-        <p style="font-size:0.55em;font-weight:700;color:var(--mint-700);margin:4px 0 0;text-align:center;">671 &rarr; 1127 TFLOPS (+67.9%) in 68 AI-driven iterations</p>
       </div>
-    </div>
-    <div class="claims">
-      <div class="claim-item">
-        <span class="claim-icon" style="background:#dcfce9;">&#x1F916;</span>
-        <span>Language <strong>designed from scratch</strong> for AI-assisted optimization</span>
+      <!-- Tab 2: blockscale -->
+      <div class="era-feature-panel" id="cqb-f2">
+        <div class="cq-panel" style="gap:10px;">
+          <h4>Blockscale GEMM E4M3→FP32 · 8192³</h4>
+          <img src="../../assets/images/cq-chart-blockscale-e4m3-8192.svg" alt="Convergence: CroqTile 711, TileLang 408, Triton 298, Helion 167" style="width:100%; height:auto; border-radius:6px;">
+          <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; font-size:0.82em;">
+            <div style="text-align:center; padding:6px; border-radius:6px; background:rgba(52,211,153,0.1);">
+              <div style="font-weight:800; color:#34d399; font-family:'JetBrains Mono',monospace;">711</div>
+              <div style="font-size:0.78em; color:#6b7280;">CroqTile</div>
+            </div>
+            <div style="text-align:center; padding:6px; border-radius:6px; background:rgba(244,114,182,0.1);">
+              <div style="font-weight:800; color:#f472b6; font-family:'JetBrains Mono',monospace;">408</div>
+              <div style="font-size:0.78em; color:#6b7280;">TileLang</div>
+            </div>
+            <div style="text-align:center; padding:6px; border-radius:6px; background:rgba(129,140,248,0.1);">
+              <div style="font-weight:800; color:#818cf8; font-family:'JetBrains Mono',monospace;">298</div>
+              <div style="font-size:0.78em; color:#6b7280;">Triton</div>
+            </div>
+            <div style="text-align:center; padding:6px; border-radius:6px; background:rgba(245,158,11,0.1);">
+              <div style="font-weight:800; color:#f59e0b; font-family:'JetBrains Mono',monospace;">167</div>
+              <div style="font-size:0.78em; color:#6b7280;">Helion</div>
+            </div>
+          </div>
+          <div style="font-size:0.72em; color:#6b7280; text-align:center;">cuBLAS baseline: 460 TFLOPS · CroqTile = <strong style="color:#34d399;">155%</strong> of vendor library · <strong style="color:#34d399;">6 iterations only</strong></div>
+        </div>
       </div>
-      <div class="claim-item">
-        <span class="claim-icon" style="background:#dbeafe;">&#x1F4DD;</span>
-        <span>Compact syntax keeps entire kernels inside <strong>AI context windows</strong></span>
+      <!-- Tab 3: matmul thin -->
+      <div class="era-feature-panel" id="cqb-f4">
+        <div class="cq-panel" style="gap:10px;">
+          <h4>matmul FP16→FP32 · 16384×16384×512</h4>
+          <img src="../../assets/images/cq-chart-matmul-fp16-16384x512.svg" alt="Convergence: CroqTile 360, Triton 355, Helion 288, TileLang 260, CUDA 169" style="width:100%; height:auto; border-radius:6px;">
+          <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:4px; font-size:0.78em;">
+            <div style="text-align:center; padding:5px 3px; border-radius:6px; background:rgba(52,211,153,0.1);">
+              <div style="font-weight:800; color:#34d399; font-family:'JetBrains Mono',monospace;">360</div>
+              <div style="font-size:0.75em; color:#6b7280;">CroqTile</div>
+            </div>
+            <div style="text-align:center; padding:5px 3px; border-radius:6px; background:rgba(129,140,248,0.1);">
+              <div style="font-weight:800; color:#818cf8; font-family:'JetBrains Mono',monospace;">355</div>
+              <div style="font-size:0.75em; color:#6b7280;">Triton</div>
+            </div>
+            <div style="text-align:center; padding:5px 3px; border-radius:6px; background:rgba(245,158,11,0.08);">
+              <div style="font-weight:800; color:#f59e0b; font-family:'JetBrains Mono',monospace;">288</div>
+              <div style="font-size:0.75em; color:#6b7280;">Helion</div>
+            </div>
+            <div style="text-align:center; padding:5px 3px; border-radius:6px; background:rgba(244,114,182,0.1);">
+              <div style="font-weight:800; color:#f472b6; font-family:'JetBrains Mono',monospace;">260</div>
+              <div style="font-size:0.75em; color:#6b7280;">TileLang</div>
+            </div>
+            <div style="text-align:center; padding:5px 3px; border-radius:6px; background:rgba(239,68,68,0.08);">
+              <div style="font-weight:800; color:#ef4444; font-family:'JetBrains Mono',monospace;">169</div>
+              <div style="font-size:0.75em; color:#6b7280;">CUDA</div>
+            </div>
+          </div>
+          <div style="font-size:0.72em; color:#6b7280; text-align:center;">cuBLAS baseline: 403 TFLOPS · thin-K shape (memory-bound)</div>
+        </div>
       </div>
-      <div class="claim-item">
-        <span class="claim-icon" style="background:#fef3c7;">&#x1F3AF;</span>
-        <span>AI achieved <strong>1127 TFLOPS</strong> from 671 baseline in a single session</span>
+      <!-- Tab 4: matmul 16416 non-aligned -->
+      <div class="era-feature-panel" id="cqb-f5">
+        <div class="cq-panel" style="gap:10px;">
+          <h4>matmul FP16→FP32 · 16416³ (non-aligned)</h4>
+          <img src="../../assets/images/cq-chart-matmul-f16-16416.svg" alt="Convergence: Triton 345, Helion 330, TileLang 329, CroqTile 300, CUDA 160" style="width:100%; height:auto; border-radius:6px;">
+          <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:4px; font-size:0.78em;">
+            <div style="text-align:center; padding:5px 3px; border-radius:6px; background:rgba(129,140,248,0.1);">
+              <div style="font-weight:800; color:#818cf8; font-family:'JetBrains Mono',monospace;">345</div>
+              <div style="font-size:0.75em; color:#6b7280;">Triton</div>
+            </div>
+            <div style="text-align:center; padding:5px 3px; border-radius:6px; background:rgba(245,158,11,0.08);">
+              <div style="font-weight:800; color:#f59e0b; font-family:'JetBrains Mono',monospace;">330</div>
+              <div style="font-size:0.75em; color:#6b7280;">Helion</div>
+            </div>
+            <div style="text-align:center; padding:5px 3px; border-radius:6px; background:rgba(244,114,182,0.1);">
+              <div style="font-weight:800; color:#f472b6; font-family:'JetBrains Mono',monospace;">329</div>
+              <div style="font-size:0.75em; color:#6b7280;">TileLang</div>
+            </div>
+            <div style="text-align:center; padding:5px 3px; border-radius:6px; background:rgba(52,211,153,0.1);">
+              <div style="font-weight:800; color:#34d399; font-family:'JetBrains Mono',monospace;">300</div>
+              <div style="font-size:0.75em; color:#6b7280;">CroqTile</div>
+            </div>
+            <div style="text-align:center; padding:5px 3px; border-radius:6px; background:rgba(239,68,68,0.08);">
+              <div style="font-weight:800; color:#ef4444; font-family:'JetBrains Mono',monospace;">160</div>
+              <div style="font-size:0.75em; color:#6b7280;">CUDA</div>
+            </div>
+          </div>
+          <div style="font-size:0.72em; color:#6b7280; text-align:center;">cuBLAS baseline: 413 TFLOPS · non-power-of-2 shape (ongoing tuning)</div>
+        </div>
       </div>
-      <div class="claim-item">
-        <span class="claim-icon" style="background:#ede9fe;">&#x1F527;</span>
-        <span>Well-documented CLI and <strong>structured errors</strong> for autonomous agents</span>
-      </div>
-      <table class="check-table" style="margin-top:6px;font-size:0.45em;">
-        <thead><tr><th>Iter</th><th>TFLOPS</th><th>Eff%</th><th>Type</th><th>Key Optimization</th></tr></thead>
-        <tbody>
-          <tr><td><strong>baseline</strong></td><td>671</td><td>22.2%</td><td>.co</td><td>1p1c, swizzle128/128, prepack</td></tr>
-          <tr><td><strong>iter001</strong></td><td>759</td><td>25.1%</td><td>.co</td><td>TMA metadata staging</td></tr>
-          <tr><td><strong>iter016</strong></td><td>772</td><td>25.5%</td><td>.co</td><td>Early empty signal + merged barrier</td></tr>
-          <tr><td><strong>iter023</strong></td><td>811</td><td>26.8%</td><td>.cu</td><td>SW pipelined consumer + warpgroup</td></tr>
-          <tr><td><strong>iter036</strong></td><td>897</td><td>29.6%</td><td>.cu</td><td>1-producer/2-consumer warp spec</td></tr>
-          <tr><td><strong>iter068</strong></td><td><strong>1127</strong></td><td><strong>37.2%</strong></td><td>.cu</td><td>3-stage pipeline + persistent</td></tr>
-        </tbody>
-      </table>
-      <p style="font-size:0.45em;color:var(--fg-secondary);margin-top:4px;text-align:center;">H800 PCIe &middot; 4096&times;8192&times;8192 &middot; FP8 E4M3 Sparse GEMM &middot; Peak 3026 TFLOPS</p>
     </div>
   </div>
+
 </section>
 
 <!-- ═══════════════════════════════════════════════════════ -->
@@ -854,47 +955,60 @@
     <img src="../../assets/images/logo%202%20new.png" alt="">
     <span class="header-title">CroqTile</span>
     <span class="header-sep">|</span>
-    <span class="header-section">Chapter 4 — Performance &amp; AI Tuning</span>
+    <span class="header-section">Chapter 4 — AI Tuning Results</span>
   </div>
   <div class="slide-footer">
     <span class="footer-brand">CroqTile — The Next-Gen GPU &amp; DSA Language</span>
     <span class="footer-right">github.com/croqtile</span>
   </div>
-  <h2>AI-Tuned SPMM: CroqTile Kernel Performance</h2>
-  <div class="split" style="grid-template-columns:1fr 1fr;gap:24px;margin-top:8px;">
-    <div>
-      <p style="font-size:0.65em;font-weight:700;color:var(--mint-700);margin:0 0 6px;">SPMM Throughput (M=N=K)</p>
-      <p style="font-size:0.5em;color:var(--fg-secondary);margin:0 0 8px;">CroqTile AI-tuned (green) vs cuSPARSELt (gray) &mdash; H800 PCIe, e4m3</p>
-      <img src="../../assets/figures/sweep_mnk_line.svg" alt="SPMM throughput" style="width:100%;height:380px;object-fit:contain;border:1px solid var(--border);border-radius:6px;background:#fff;padding:4px;">
-      <div style="background:var(--mint-50);border:1px solid var(--mint-100);border-radius:8px;padding:10px 14px;margin-top:10px;">
-        <p style="font-size:0.55em;font-weight:700;color:var(--mint-700);margin:0 0 6px;">AI-Tuned SPMM Summary (95 shapes)</p>
-        <ul style="margin:0;padding-left:16px;">
-          <li style="font-size:0.5em;margin-bottom:3px;">Wins on <strong>80/95 shapes (84%)</strong></li>
-          <li style="font-size:0.5em;margin-bottom:3px;">Average speedup: <strong>+16.7%</strong>, median: <strong>+19.5%</strong></li>
-          <li style="font-size:0.5em;margin-bottom:0;">Peak speedup: <strong>+41.9%</strong></li>
-        </ul>
+  <h2>CroqTile + AI-Tuning = Production-Level Performance</h2>
+
+  <div class="era-split" data-era="spmm-perf" style="max-width:920px; margin:14px auto 0;">
+    <div class="era-left">
+      <div style="font-size:0.68em; color:var(--fg-secondary); line-height:1.5; margin-bottom:4px;">
+        CroqTile AI-tuned <strong style="color:var(--mint-700);">wins 84%</strong> of 95 shapes.<br>
+        Average speedup <strong style="color:var(--mint-700);">+16.7%</strong> over cuSPARSELt.
+      </div>
+      <div class="era-feature-tabs">
+        <button class="era-tab active" data-target="sp-mnk"><span class="tab-icon">📊</span> sweep M=N=K</button>
+        <button class="era-tab" data-target="sp-m"><span class="tab-icon">📈</span> sweep M</button>
+        <button class="era-tab" data-target="sp-n"><span class="tab-icon">📈</span> sweep N</button>
+        <button class="era-tab" data-target="sp-k"><span class="tab-icon">📈</span> sweep K</button>
+        <button class="era-tab" data-target="sp-mn"><span class="tab-icon">📉</span> sweep M=N</button>
+        <button class="era-tab" data-target="sp-mk"><span class="tab-icon">📉</span> sweep M=K</button>
+        <button class="era-tab" data-target="sp-nk"><span class="tab-icon">📉</span> sweep N=K</button>
       </div>
     </div>
-    <div>
-      <p style="font-size:0.65em;font-weight:700;color:var(--mint-700);margin:0 0 6px;">AI-Tune Performance Curve</p>
-      <p style="font-size:0.5em;color:var(--fg-secondary);margin:0 0 8px;">Model-guided vs random search &mdash; 4096&times;8192&times;8192 e4m3</p>
-      <img src="../../assets/figures/autotune-efficacy-convergence.svg" alt="AI-tune perf curve" style="width:100%;height:380px;object-fit:contain;border:1px solid var(--border);border-radius:6px;background:#fff;padding:4px;">
-      <div style="background:var(--mint-50);border:1px solid var(--mint-100);border-radius:8px;padding:10px 14px;margin-top:10px;">
-        <p style="font-size:0.55em;font-weight:700;color:var(--mint-700);margin:0 0 6px;">Key Findings</p>
-        <ul style="margin:0;padding-left:16px;">
-          <li style="font-size:0.5em;margin-bottom:3px;">Model-guided AI-tune reaches <strong>~1260 TFLOPS</strong></li>
-          <li style="font-size:0.5em;margin-bottom:3px;">Random baseline plateaus near <strong>~1100 TFLOPS</strong></li>
-          <li style="font-size:0.5em;margin-bottom:0;">Guided approach converges in <strong>fewer iterations</strong></li>
-        </ul>
+    <div class="era-right" style="border:1px solid var(--border); background:#fff; border-radius:12px; padding:8px; max-width:560px;">
+      <div class="era-feature-panel active" id="sp-mnk">
+        <img src="../../assets/figures/sweep_mnk_line.svg" alt="SPMM sweep M=N=K" style="width:100%; max-height:420px; object-fit:contain; border-radius:4px;">
+      </div>
+      <div class="era-feature-panel" id="sp-m">
+        <img src="../../assets/figures/sweep_m_line.svg" alt="SPMM sweep M" style="width:100%; max-height:420px; object-fit:contain; border-radius:4px;">
+      </div>
+      <div class="era-feature-panel" id="sp-n">
+        <img src="../../assets/figures/sweep_n_line.svg" alt="SPMM sweep N" style="width:100%; max-height:420px; object-fit:contain; border-radius:4px;">
+      </div>
+      <div class="era-feature-panel" id="sp-k">
+        <img src="../../assets/figures/sweep_k_line.svg" alt="SPMM sweep K" style="width:100%; max-height:420px; object-fit:contain; border-radius:4px;">
+      </div>
+      <div class="era-feature-panel" id="sp-mn">
+        <img src="../../assets/figures/sweep_mn_line.svg" alt="SPMM sweep M=N" style="width:100%; max-height:420px; object-fit:contain; border-radius:4px;">
+      </div>
+      <div class="era-feature-panel" id="sp-mk">
+        <img src="../../assets/figures/sweep_mk_line.svg" alt="SPMM sweep M=K" style="width:100%; max-height:420px; object-fit:contain; border-radius:4px;">
+      </div>
+      <div class="era-feature-panel" id="sp-nk">
+        <img src="../../assets/figures/sweep_nk_line.svg" alt="SPMM sweep N=K" style="width:100%; max-height:420px; object-fit:contain; border-radius:4px;">
       </div>
     </div>
   </div>
 </section>
 
 <!-- ═══════════════════════════════════════════════════════ -->
-<!-- SLIDE 18c: Context Engineering                         -->
+<!-- SLIDE: Why CroqTile Fits AI Tuning (3-tab)             -->
 <!-- ═══════════════════════════════════════════════════════ -->
-<section class="dense">
+<section class="dense" id="why-ai-fit">
   <div class="slide-header">
     <img src="../../assets/images/logo%202%20new.png" alt="">
     <span class="header-title">CroqTile</span>
@@ -905,90 +1019,217 @@
     <span class="footer-brand">CroqTile — The Next-Gen GPU &amp; DSA Language</span>
     <span class="footer-right">github.com/croqtile</span>
   </div>
-  <h2>Superior Context Engineering</h2>
-  <p style="margin-top:-4px;font-size:0.7em;opacity:0.8;">Why CroqTile is the optimal language substrate for AI-driven kernel optimization</p>
-  <div class="feature-grid" style="grid-template-columns:1fr 1fr;gap:14px;margin-top:16px;">
-    <div class="feature-card" style="padding:16px 14px;">
-      <h3 style="font-size:0.75em;"><span class="feature-icon" style="background:#dcfce9;">&#x1F4CA;</span> Highest Source Density</h3>
-      <p style="font-size:0.55em;margin:8px 0 0;line-height:1.5;color:var(--fg-secondary);">25-line kernels fit entirely in ~500 tokens. <strong>Lowest information entropy</strong> per context token &mdash; every token carries optimization-relevant semantics, not boilerplate.</p>
-    </div>
-    <div class="feature-card" style="padding:16px 14px;">
-      <h3 style="font-size:0.75em;"><span class="feature-icon" style="background:#dbeafe;">&#x2699;</span> Unified Primitives</h3>
-      <p style="font-size:0.55em;margin:8px 0 0;line-height:1.5;color:var(--fg-secondary);">One <code>dma.copy</code> / <code>mma.row</code> dispatches to the optimal HW implementation at compile time. AI only reasons about <strong>intent</strong>, not instruction selection &mdash; faster convergence.</p>
-    </div>
-    <div class="feature-card" style="padding:16px 14px;">
-      <h3 style="font-size:0.75em;"><span class="feature-icon" style="background:#fef3c7;">&#x1F9E0;</span> AI-Parsable Syntax</h3>
-      <p style="font-size:0.55em;margin:8px 0 0;line-height:1.5;color:var(--fg-secondary);">Clean, regular syntax with explicit semantics. AI agents <strong>understand and reason</strong> about the code structure, not just pattern-match and copy &mdash; enabling principled optimizations.</p>
-    </div>
-    <div class="feature-card" style="padding:16px 14px;">
-      <h3 style="font-size:0.75em;"><span class="feature-icon" style="background:#fee2e2;">&#x1F6E1;</span> Safety-Accelerated Loop</h3>
-      <p style="font-size:0.55em;margin:8px 0 0;line-height:1.5;color:var(--fg-secondary);">Compile-time safety checks accelerate the tuning feedback loop. Invalid changes are <strong>rejected immediately</strong>, eliminating divergent thinking and random guessing in the AI&rsquo;s context.</p>
-    </div>
+  <h2>Why CroqTile Fits AI Tuning</h2>
+  <div class="agg-tabs" style="margin-bottom:12px;">
+    <button class="agg-tab active" data-panel="fit-token">Lowest Token Footprint</button>
+    <button class="agg-tab" data-panel="fit-decouple">Less Sites for Code Change</button>
+    <button class="agg-tab" data-panel="fit-compiler">Compiler Message as Guardrail</button>
   </div>
-  <blockquote style="margin-top:14px;font-size:0.6em;">CUDA: 180+ lines/kernel, 3000+ tokens, manual debug. CroqTile: 25 lines, ~500 tokens, zero silent bugs.</blockquote>
-</section>
 
-<!-- ═══════════════════════════════════════════════════════ -->
-<!-- SLIDE 19: Harness Engineering                          -->
-<!-- ═══════════════════════════════════════════════════════ -->
-<section class="dense">
-  <div class="slide-header">
-    <img src="../../assets/images/logo%202%20new.png" alt="">
-    <span class="header-title">CroqTile</span>
-    <span class="header-sep">|</span>
-    <span class="header-section">Chapter 4 — AI Programming</span>
-  </div>
-  <div class="slide-footer">
-    <span class="footer-brand">CroqTile — The Next-Gen GPU &amp; DSA Language</span>
-    <span class="footer-right">github.com/croqtile</span>
-  </div>
-  <h2>Superior Harness Engineering</h2>
-  <p style="margin-top:-4px;font-size:0.7em;opacity:0.8;">Compiler as AI guardrail &mdash; controlling randomness, accelerating convergence</p>
-  <div class="website-split" style="grid-template-columns:1.1fr 0.9fr;gap:16px;">
-    <div style="display:flex;flex-direction:column;gap:12px;">
-      <div class="feature-card" style="padding:14px 16px;">
-        <h3 style="font-size:0.75em;"><span class="feature-icon" style="background:#dcfce9;">&#x1F6E1;</span> Exhaustive Safety Coverage</h3>
-        <p style="font-size:0.55em;margin:6px 0 0;line-height:1.5;color:var(--fg-secondary);">No error falls back to an opaque runtime bug. 353 compile-time + 1,319 runtime checks eliminate <strong>random guessing</strong> &mdash; every invalid state is caught with a clear diagnostic, accelerating convergence and strengthening harness stability.</p>
+  <!-- Tab 1: Token Footprint (vertical, centered) -->
+  <div class="agg-panel active" id="fit-token">
+    <div style="max-width:720px; margin:0 auto; display:flex; flex-direction:column; gap:12px;">
+      <div style="padding:12px 16px; border-radius:10px; background:linear-gradient(180deg,#ffffff 0%,#ecfdf5 100%); border:1.5px solid #22c55e;">
+        <div style="font-size:0.52em; font-weight:700; color:#166534; margin-bottom:8px;">同一 persistent warp-specialized GEMM &mdash; 实测 token 数</div>
+        <div style="display:grid; grid-template-columns:110px 1fr auto; gap:5px 10px; font-size:0.48em; line-height:1.8; align-items:center;">
+          <span style="font-weight:700; color:#34d399;">CroqTile</span>
+          <div style="height:14px; width:13%; background:#34d399; border-radius:4px;"></div>
+          <span style="font-weight:700; color:#34d399;">36 LOC / 303 tokens</span>
+          <span style="font-weight:700; color:#818cf8;">Triton</span>
+          <div style="height:14px; width:19%; background:#818cf8; border-radius:4px;"></div>
+          <span style="font-weight:700; color:#818cf8;">80 LOC / 449 tokens</span>
+          <span style="font-weight:700; color:#f97316;">CUDA + CuTe</span>
+          <div style="height:14px; width:65%; background:#f97316; border-radius:4px;"></div>
+          <span style="font-weight:700; color:#f97316;">182 LOC / 1530 tokens</span>
+          <span style="font-weight:700; color:#dc2626;">CUTLASS</span>
+          <div style="height:14px; width:100%; background:#dc2626; border-radius:4px;"></div>
+          <span style="font-weight:700; color:#dc2626;">280 LOC / 2350 tokens</span>
+        </div>
       </div>
-      <div class="feature-card" style="padding:14px 16px;">
-        <h3 style="font-size:0.75em;"><span class="feature-icon" style="background:#dbeafe;">&#x1F4AC;</span> AI-Readable Diagnostics</h3>
-        <p style="font-size:0.55em;margin:6px 0 0;line-height:1.5;color:var(--fg-secondary);">Compiler and profiler messages are designed for AI reading. Each error message acts as a <strong>guardrail</strong> that directly informs the next optimization step &mdash; no manual interpretation needed, faster tuning convergence.</p>
+      <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:8px;">
+        <div style="text-align:center; padding:10px 6px; border-radius:8px; background:rgba(52,211,153,0.08); border:1px solid rgba(52,211,153,0.2);">
+          <div style="font-size:1.3em; font-weight:800; color:#34d399;">303</div>
+          <div style="font-size:0.6em; color:#6b7280;">CroqTile</div>
+        </div>
+        <div style="text-align:center; padding:10px 6px; border-radius:8px; background:rgba(129,140,248,0.08); border:1px solid rgba(129,140,248,0.2);">
+          <div style="font-size:1.3em; font-weight:800; color:#818cf8;">449</div>
+          <div style="font-size:0.6em; color:#6b7280;">Triton</div>
+        </div>
+        <div style="text-align:center; padding:10px 6px; border-radius:8px; background:rgba(249,115,22,0.08); border:1px solid rgba(249,115,22,0.2);">
+          <div style="font-size:1.3em; font-weight:800; color:#f97316;">1530</div>
+          <div style="font-size:0.6em; color:#6b7280;">CUDA+CuTe</div>
+        </div>
+        <div style="text-align:center; padding:10px 6px; border-radius:8px; background:rgba(220,38,38,0.06); border:1px solid rgba(220,38,38,0.2);">
+          <div style="font-size:1.3em; font-weight:800; color:#dc2626;">2350</div>
+          <div style="font-size:0.6em; color:#6b7280;">CUTLASS</div>
+        </div>
       </div>
-      <div class="feature-card" style="padding:14px 16px;">
-        <h3 style="font-size:0.75em;"><span class="feature-icon" style="background:#fef3c7;">&#x1F527;</span> Unified Declaration &amp; Use</h3>
-        <p style="font-size:0.55em;margin:6px 0 0;line-height:1.5;color:var(--fg-secondary);">Higher-level integrated abstractions merge declaration and usage. Raw CUDA TMA requires configuring descriptor, CUtensorMap, moving them to device, and picking the trigger thread separately &mdash; CroqTile: <strong>one <code>tma.copy</code> primitive</strong>. Eliminates config/use mismatch bugs that waste AI tuning cycles.</p>
+      <div style="padding:10px 14px; border-radius:10px; background:linear-gradient(180deg,#ffffff 0%,#faf5ff 100%); border:1.5px solid #a855f7;">
+        <div style="font-size:0.52em; color:var(--fg-secondary); line-height:1.55; text-align:center;">
+          <strong style="color:#7e22ce;">推论：</strong>同样 100 iterations，CroqTile ~70K tokens / CUDA ~350K tokens。CroqTile 可以跑 <strong style="color:#7e22ce;">5&times; 更多轮次</strong>，或用更小模型。
+        </div>
       </div>
     </div>
-    <div>
-      <table class="check-table" style="font-size:0.55em;">
-        <thead><tr><th>Metric</th><th>CroqTile</th><th>CUDA</th></tr></thead>
-        <tbody>
-          <tr><td>Invalid kernel &rarr; error</td><td class="check-yes"><strong>Compile-time</strong></td><td class="check-no">Silent bug</td></tr>
-          <tr><td>Shape mismatch</td><td class="check-yes"><strong>Auto-generated</strong></td><td class="check-no">Manual / absent</td></tr>
-          <tr><td>TMA config</td><td class="check-yes"><strong>1 primitive</strong></td><td class="check-no">5+ setup steps</td></tr>
-          <tr><td>AI iterations w/o crash</td><td class="check-yes"><strong>200+</strong></td><td class="check-no">Frequent hangs</td></tr>
-          <tr><td>Debug context cost</td><td class="check-yes"><strong>~0 tokens</strong></td><td class="check-no">~3000+ tokens</td></tr>
-          <tr><td>AI learning curve</td><td class="check-yes"><strong>Hours</strong></td><td class="check-no">Days</td></tr>
-        </tbody>
-      </table>
-      <blockquote style="margin-top:10px;font-size:0.6em;">The compiler is the harness &mdash; it reduces AI randomness by making invalid programs <strong>impossible to compile</strong>.</blockquote>
+  </div>
+
+  <!-- Tab 2: Less Sites for Code Change (vertical, centered) -->
+  <div class="agg-panel" id="fit-decouple">
+    <div style="max-width:680px; margin:0 auto; display:flex; flex-direction:column; gap:12px;">
+      <div style="padding:12px 16px; border-radius:10px; background:linear-gradient(180deg,#ffffff 0%,#ecfdf5 100%); border:1.5px solid #22c55e;">
+        <div style="font-size:0.52em; font-weight:700; color:#166534; margin-bottom:6px;">CroqTile: 同一 DMA 搬运 = 1 行代码 &amp; compiler 自动生成 barrier</div>
+        <div style="font-size:0.48em; line-height:2.0; color:var(--fg-secondary);">
+          <div style="display:grid; grid-template-columns:20px 1fr; gap:0 8px; align-items:center;">
+            <span style="display:inline-block; width:18px; height:18px; border-radius:50%; background:#22c55e; color:white; text-align:center; line-height:18px; font-size:0.7em; font-weight:800;">&#x2714;</span>
+            <span>Buffer = <code style="color:#166534;">shared f16 [M, K] lhs_s;</code></span>
+            <span style="display:inline-block; width:18px; height:18px; border-radius:50%; background:#22c55e; color:white; text-align:center; line-height:18px; font-size:0.7em; font-weight:800;">&#x2714;</span>
+            <span>DMA = <code style="color:#166534;">tma.copy.swiz&lt;128&gt; src =&gt; lhs_s;</code></span>
+            <span style="display:inline-block; width:18px; height:18px; border-radius:50%; background:#22c55e; color:white; text-align:center; line-height:18px; font-size:0.7em; font-weight:800;">&#x2714;</span>
+            <span>Barrier / fence = <strong style="color:#166534;">compiler 自动插入</strong></span>
+          </div>
+        </div>
+      </div>
+      <div style="padding:12px 16px; border-radius:10px; border:1.5px solid var(--border); background:#fff;">
+        <div style="font-size:0.52em; font-weight:700; color:var(--fg); margin-bottom:8px;">AI tuning 操作 &rarr; 代码改动量对比</div>
+        <div style="display:grid; grid-template-columns:1fr; gap:6px; font-size:0.48em;">
+          <div style="padding:7px 12px; border-radius:6px; background:rgba(52,211,153,0.04); border:1px solid rgba(52,211,153,0.15); display:grid; grid-template-columns:1fr auto auto; gap:4px; align-items:center;">
+            <span style="color:var(--fg-secondary);">改 tile size (WARP_M/N)</span>
+            <span style="font-weight:700; color:#34d399;">1 处</span>
+            <span style="font-weight:700; color:#ef4444;">5 处</span>
+          </div>
+          <div style="padding:7px 12px; border-radius:6px; background:rgba(52,211,153,0.04); border:1px solid rgba(52,211,153,0.15); display:grid; grid-template-columns:1fr auto auto; gap:4px; align-items:center;">
+            <span style="color:var(--fg-secondary);">改 swizzle 模式</span>
+            <span style="font-weight:700; color:#34d399;">1 处</span>
+            <span style="font-weight:700; color:#ef4444;">3 处</span>
+          </div>
+          <div style="padding:7px 12px; border-radius:6px; background:rgba(52,211,153,0.04); border:1px solid rgba(52,211,153,0.15); display:grid; grid-template-columns:1fr auto auto; gap:4px; align-items:center;">
+            <span style="color:var(--fg-secondary);">改 pipeline stages</span>
+            <span style="font-weight:700; color:#34d399;">1 处</span>
+            <span style="font-weight:700; color:#ef4444;">4 处</span>
+          </div>
+          <div style="padding:7px 12px; border-radius:6px; background:rgba(52,211,153,0.04); border:1px solid rgba(52,211,153,0.15); display:grid; grid-template-columns:1fr auto auto; gap:4px; align-items:center;">
+            <span style="color:var(--fg-secondary);">改 data type (f16&rarr;f8)</span>
+            <span style="font-weight:700; color:#34d399;">1 处</span>
+            <span style="font-weight:700; color:#ef4444;">7 处</span>
+          </div>
+          <div style="padding:7px 12px; border-radius:6px; background:rgba(52,211,153,0.04); border:1px solid rgba(52,211,153,0.15); display:grid; grid-template-columns:1fr auto auto; gap:4px; align-items:center;">
+            <span style="color:var(--fg-secondary);">加 warp specialization</span>
+            <span style="font-weight:700; color:#34d399;">2 处</span>
+            <span style="font-weight:700; color:#ef4444;">6 处</span>
+          </div>
+          <div style="padding:3px 12px; font-size:0.9em; color:#6b7280; text-align:right;">
+            <span style="color:#34d399; font-weight:700;">CroqTile</span> / <span style="color:#ef4444; font-weight:700;">CUDA</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
+
+  <!-- Tab 3: Compiler Message as Guardrail (vertical, centered, with CUDA contrast) -->
+  <div class="agg-panel" id="fit-compiler">
+    <div style="max-width:750px; margin:0 auto; display:flex; flex-direction:column; gap:12px;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div style="padding:10px 12px; border-radius:10px; background:linear-gradient(180deg,#ffffff 0%,#fef2f2 100%); border:1.5px solid #ef4444;">
+          <div style="font-size:0.50em; font-weight:800; color:#ef4444; margin-bottom:6px;">CUDA: runtime 才发现错误</div>
+          <div style="font-size:0.44em; color:var(--fg-secondary); line-height:1.8;">
+            <div style="display:grid; grid-template-columns:auto 1fr; gap:3px 8px; align-items:center;">
+              <span style="color:#ef4444; font-weight:800;">&#x26A0;</span>
+              <span>Tile 不整除 &rarr; <strong style="color:#ef4444;">device hang</strong></span>
+              <span style="color:#ef4444; font-weight:800;">&#x26A0;</span>
+              <span>Shared memory 超限 &rarr; <strong style="color:#ef4444;">silent launch fail</strong></span>
+              <span style="color:#ef4444; font-weight:800;">&#x26A0;</span>
+              <span>Swizzle 不匹配 &rarr; <strong style="color:#ef4444;">wrong results</strong></span>
+              <span style="color:#ef4444; font-weight:800;">&#x26A0;</span>
+              <span>mbarrier 错误 &rarr; <strong style="color:#ef4444;">deadlock</strong></span>
+            </div>
+          </div>
+        </div>
+        <div style="padding:10px 12px; border-radius:10px; background:linear-gradient(180deg,#ffffff 0%,#ecfdf5 100%); border:1.5px solid #22c55e;">
+          <div style="font-size:0.50em; font-weight:800; color:#166534; margin-bottom:6px;">CroqTile: 编译期完整诊断</div>
+          <div style="font-size:0.44em; color:var(--fg-secondary); line-height:1.8;">
+            <div style="display:grid; grid-template-columns:auto 1fr; gap:3px 8px; align-items:center;">
+              <span style="color:#22c55e; font-weight:800;">&#x2714;</span>
+              <span><code style="color:#166534;">error: tile M=96 not divisible by WARP_M=64</code></span>
+              <span style="color:#22c55e; font-weight:800;">&#x2714;</span>
+              <span><code style="color:#166534;">error: smem 49408B exceeds 48KB limit</code></span>
+              <span style="color:#22c55e; font-weight:800;">&#x2714;</span>
+              <span><code style="color:#166534;">error: swiz&lt;128&gt; requires 128B-aligned</code></span>
+              <span style="color:#22c55e; font-weight:800;">&#x2714;</span>
+              <span><code style="color:#166534;">error: mma.row requires M%64==0</code></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:8px;">
+        <div style="text-align:center; padding:10px 6px; border-radius:8px; background:rgba(52,211,153,0.08); border:1px solid rgba(52,211,153,0.2);">
+          <div style="font-size:1.2em; font-weight:800; color:#34d399;">353</div>
+          <div style="font-size:0.55em; color:#6b7280;">compile checks</div>
+        </div>
+        <div style="text-align:center; padding:10px 6px; border-radius:8px; background:rgba(52,211,153,0.08); border:1px solid rgba(52,211,153,0.2);">
+          <div style="font-size:1.2em; font-weight:800; color:#34d399;">1,319</div>
+          <div style="font-size:0.55em; color:#6b7280;">runtime asserts</div>
+        </div>
+        <div style="text-align:center; padding:10px 6px; border-radius:8px; background:rgba(52,211,153,0.08); border:1px solid rgba(52,211,153,0.2);">
+          <div style="font-size:1.2em; font-weight:800; color:#34d399;">3&ndash;8s</div>
+          <div style="font-size:0.55em; color:#6b7280;">CroqTile / iteration</div>
+        </div>
+        <div style="text-align:center; padding:10px 6px; border-radius:8px; background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.2);">
+          <div style="font-size:1.2em; font-weight:800; color:#ef4444;">30&ndash;90s</div>
+          <div style="font-size:0.55em; color:#6b7280;">CUDA / iteration</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    #why-ai-fit .agg-tabs{display:flex;gap:6px;margin-bottom:10px;padding:5px;background:#eef1ef;border-radius:12px;}
+    #why-ai-fit .agg-tab{padding:7px 16px;font-size:0.72em;font-weight:600;letter-spacing:0.01em;border:none;border-radius:8px;cursor:pointer;background:transparent !important;color:#777 !important;transition:all .25s cubic-bezier(.4,0,.2,1);}
+    #why-ai-fit .agg-tab.active{background:#ffffff !important;color:#222 !important;font-weight:700;box-shadow:0 1px 6px rgba(0,0,0,0.1),0 1px 2px rgba(0,0,0,0.06);}
+    #why-ai-fit .agg-tab:hover:not(.active){background:rgba(255,255,255,0.6) !important;color:#333 !important;}
+    #why-ai-fit .agg-panel{display:none;transform:scale(1.3);transform-origin:top center;}
+    #why-ai-fit .agg-panel.active{display:block;}
+  </style>
+  <script>
+    (function(){
+      var tabs=document.querySelectorAll('#why-ai-fit .agg-tab');
+      tabs.forEach(function(t){
+        t.addEventListener('click',function(e){
+          e.preventDefault();e.stopPropagation();
+          tabs.forEach(function(x){x.classList.remove('active');});
+          t.classList.add('active');
+          var panels=document.querySelectorAll('#why-ai-fit .agg-panel');
+          panels.forEach(function(p){p.classList.remove('active');});
+          var target=document.getElementById(t.getAttribute('data-panel'));
+          if(target) target.classList.add('active');
+        });
+      });
+    })();
+  </script>
 </section>
 
 <!-- ═══════════════════════════════════════════════════════ -->
 <!-- SLIDE 21: Closing                                      -->
 <!-- ═══════════════════════════════════════════════════════ -->
-<section class="lead" data-background-color="#d1fae5">
-  <img src="../../assets/images/logo%202%20new.png" alt="CroqTile" style="height:64px;margin-bottom:16px;border-radius:8px;">
-  <h1><span class="brand-green">Croqtile</span> — Fewer Lines. Safer Kernels. AI-Ready.</h1>
-  <div class="stats-grid">
-    <div class="stat"><span class="stat-value">40%</span><span class="stat-label">of equivalent CUDA code</span></div>
-    <div class="stat"><span class="stat-value">83%</span><span class="stat-label">faster than baseline (AI-tuned)</span></div>
-    <div class="stat"><span class="stat-value">200+</span><span class="stat-label">autonomous AI iterations without failure</span></div>
-    <div class="stat"><span class="stat-value">100.5%</span><span class="stat-label">cuBLAS performance on dense GEMM</span></div>
+<section class="lead" data-background-color="#0f172a">
+  <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; transform:scale(1.35); transform-origin:center center;">
+    <h1 style="color:#34d399; font-size:2.4em; margin-bottom:8px; font-weight:800; letter-spacing:-0.02em;">Thank You!!</h1>
+    <p style="font-size:1.0em; color:#e2e8f0; margin-bottom:36px; font-weight:500;">
+      <span style="color:#34d399; font-weight:700;">CroqTile</span> — Fewer Lines. Safer Kernels. AI-Native.
+    </p>
+    <div style="display:flex; align-items:center; gap:24px; padding:20px 32px; border:1px solid rgba(52,211,153,0.25); border-radius:16px; background:rgba(52,211,153,0.05);">
+      <a href="https://github.com/LancerLab/croqtile" target="_blank" style="text-decoration:none; flex-shrink:0;">
+        <img src="../../assets/images/croqtile-qr.png" alt="CroqTile GitHub" style="width:130px; height:130px; border-radius:10px; border:1px solid rgba(52,211,153,0.3);">
+      </a>
+      <div style="text-align:left;">
+        <div style="font-size:0.62em; color:#94a3b8; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.08em;">Project Repository</div>
+        <a href="https://github.com/LancerLab/croqtile" target="_blank" style="font-size:0.88em; color:#34d399; text-decoration:none; font-family:monospace; letter-spacing:0.01em;">
+          github.com/LancerLab/croqtile
+        </a>
+        <div style="font-size:0.58em; color:#64748b; margin-top:8px; line-height:1.4;">
+          GPU Kernel Compiler &amp; AI Tuning System
+        </div>
+      </div>
+    </div>
   </div>
-  <p style="margin-top:16px;font-size:0.7em;color:var(--fg-secondary)">github.com/croqtile</p>
 </section>
 
 </div><!-- .slides -->
@@ -1250,6 +1491,21 @@ Reveal.initialize({
       e.preventDefault();
       var idx = parseInt(this.getAttribute('href').replace('#/', ''), 10);
       if (!isNaN(idx)) Reveal.slide(idx);
+    });
+  });
+
+  // era-tab switching
+  document.querySelectorAll('.era-tab[data-target]').forEach(function(tab) {
+    tab.addEventListener('click', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var container = this.closest('.era-feature-tabs') || this.parentElement;
+      var panel_container = container.closest('.era-split') || container.closest('section');
+      container.querySelectorAll('.era-tab').forEach(function(t){ t.classList.remove('active'); });
+      this.classList.add('active');
+      var target = this.getAttribute('data-target');
+      panel_container.querySelectorAll('.era-feature-panel').forEach(function(p){ p.classList.remove('active'); });
+      var tp = panel_container.querySelector('#' + target);
+      if (tp) tp.classList.add('active');
     });
   });
 });
