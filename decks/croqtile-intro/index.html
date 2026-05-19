@@ -659,7 +659,7 @@
 <!-- ═══════════════════════════════════════════════════════ -->
 <!-- SLIDE: Write Once, Run Everywhere                      -->
 <!-- ═══════════════════════════════════════════════════════ -->
-<section class="dense">
+<section class="dense write-once-slide">
   <div class="slide-header">
     <img src="../../assets/images/logo%202%20new.png" alt="">
     <span class="header-title">CroqTile</span>
@@ -670,46 +670,42 @@
     <span class="footer-brand">CroqTile — The Next-Gen GPU &amp; DSA Language</span>
     <span class="footer-right">github.com/croqtile</span>
   </div>
-  <h2>Write Once, Run Everywhere</h2>
-  <div class="write-once-layout" style="display:flex; align-items:center; justify-content:center; gap:44px; margin-top:18px;">
+  <h2>Same Language, Multiple Targets.</h2>
+  <div class="write-once-layout">
     <!-- Left: CroqTile source code -->
-    <div class="write-once-code" style="min-width:340px; max-width:340px;">
+    <div class="write-once-code">
       <div class="editor-showcase" data-tabs='[
         {"file":"matmul.co","badge":"CROQTILE","label":"same source for all targets","lang":"choreo","code":"__co__ void matmul(\n    global f16 [M, K] lhs,\n    global f16 [N, K] rhs,\n    global f16 [M, N] output) {\n  parallel {block_m, block_n}\n    by [cdiv(M, WARP_M), cdiv(N, WARP_N)]\n    : block {\n    shared f16 [WARP_M, TILE_K] lhs_s;\n    mc = mma.fill.f32 0.0f;\n    foreach {iv_k} in [cdiv(K, TILE_K)] {\n      tma.copy.swiz<128>\n        lhs.subspan(WARP_M, TILE_K)\n          .at(block_m, iv_k) => lhs_s;\n      mma.row.row mc, ma, mb;\n    }\n  }\n}"}
       ]'></div>
     </div>
-    <!-- Middle: Arrows with -t targets -->
-    <div style="display:flex; flex-direction:column; gap:16px; align-items:center;">
-      <div style="display:flex; align-items:center; gap:8px;">
+    <div class="write-once-route-grid">
+      <div class="write-once-route">
         <div style="font-size:0.50em; color:#34d399; font-weight:700; font-family:monospace; background:#0f172a; padding:4px 10px; border-radius:6px; border:1px solid rgba(52,211,153,0.3);">-t cute -arch=sm_90a</div>
-        <div style="font-size:1.2em; color:#34d399;">&rarr;</div>
+        <div class="write-once-arrow" style="color:#34d399;">&rarr;</div>
       </div>
-      <div style="display:flex; align-items:center; gap:8px;">
-        <div style="font-size:0.50em; color:#22d3ee; font-weight:700; font-family:monospace; background:#0f172a; padding:4px 10px; border-radius:6px; border:1px solid rgba(34,211,238,0.3);">-t cute -arch=sm_80</div>
-        <div style="font-size:1.2em; color:#22d3ee;">&rarr;</div>
-      </div>
-      <div style="display:flex; align-items:center; gap:8px;">
-        <div style="font-size:0.50em; color:#f97316; font-weight:700; font-family:monospace; background:#0f172a; padding:4px 10px; border-radius:6px; border:1px solid rgba(249,115,22,0.3);">-t hip -arch=gfx1030</div>
-        <div style="font-size:1.2em; color:#f97316;">&rarr;</div>
-      </div>
-      <div style="display:flex; align-items:center; gap:8px;">
-        <div style="font-size:0.50em; color:#f472b6; font-weight:700; font-family:monospace; background:#0f172a; padding:4px 10px; border-radius:6px; border:1px solid rgba(244,114,182,0.3);">-t dsa_x</div>
-        <div style="font-size:1.2em; color:#f472b6;">&rarr;</div>
-      </div>
-    </div>
-    <!-- Right: Target devices -->
-    <div class="write-once-targets" style="display:flex; flex-direction:column; gap:16px;">
       <div style="padding:12px 18px; border-radius:10px; background:linear-gradient(135deg,#ecfdf5,#d1fae5); border:1.5px solid #34d399; min-width:220px;">
         <div style="font-size:0.58em; font-weight:800; color:#166534;">NVIDIA H800 / H100</div>
         <div style="font-size:0.46em; color:#6b7280;">Hopper SM90a (PTX + SASS)</div>
+      </div>
+      <div class="write-once-route">
+        <div style="font-size:0.50em; color:#22d3ee; font-weight:700; font-family:monospace; background:#0f172a; padding:4px 10px; border-radius:6px; border:1px solid rgba(34,211,238,0.3);">-t cute -arch=sm_80</div>
+        <div class="write-once-arrow" style="color:#22d3ee;">&rarr;</div>
       </div>
       <div style="padding:12px 18px; border-radius:10px; background:linear-gradient(135deg,#ecfeff,#cffafe); border:1.5px solid #22d3ee; min-width:220px;">
         <div style="font-size:0.58em; font-weight:800; color:#155e75;">NVIDIA A100</div>
         <div style="font-size:0.46em; color:#6b7280;">Ampere SM80 (PTX + SASS)</div>
       </div>
+      <div class="write-once-route">
+        <div style="font-size:0.50em; color:#f97316; font-weight:700; font-family:monospace; background:#0f172a; padding:4px 10px; border-radius:6px; border:1px solid rgba(249,115,22,0.3);">-t hip -arch=gfx1030</div>
+        <div class="write-once-arrow" style="color:#f97316;">&rarr;</div>
+      </div>
       <div style="padding:12px 18px; border-radius:10px; background:linear-gradient(135deg,#fff7ed,#ffedd5); border:1.5px solid #f97316; min-width:220px;">
         <div style="font-size:0.58em; font-weight:800; color:#9a3412;">AMD Radeon RX 6900 XT</div>
-        <div style="font-size:0.46em; color:#6b7280;">HIP backend · gfx1030</div>
+        <div style="font-size:0.46em; color:#6b7280;">RDNA2 · gfx1030</div>
+      </div>
+      <div class="write-once-route">
+        <div style="font-size:0.50em; color:#f472b6; font-weight:700; font-family:monospace; background:#0f172a; padding:4px 10px; border-radius:6px; border:1px solid rgba(244,114,182,0.3);">-t dsa_x</div>
+        <div class="write-once-arrow" style="color:#f472b6;">&rarr;</div>
       </div>
       <div style="padding:12px 18px; border-radius:10px; background:linear-gradient(135deg,#fdf2f8,#fce7f3); border:1.5px solid #f472b6; min-width:220px;">
         <div style="font-size:0.58em; font-weight:800; color:#9d174d;">Custom DSA</div>
@@ -717,8 +713,8 @@
       </div>
     </div>
   </div>
-  <div style="margin-top:18px; text-align:center; font-size:0.54em; color:var(--fg-secondary); max-width:700px; margin-left:auto; margin-right:auto;">
-    <strong style="color:#166534;">Same source &rarr; different targets</strong> &mdash; the compiler lowers CroqTile IR to each backend's native ISA. No code rewrite required.
+  <div class="write-once-myth">
+    <strong style="color:#166534;">Myth:</strong> The compiler lowers CroqTile IR to each backend's native ISA. Minor changes are required.
   </div>
 </section>
 
@@ -775,11 +771,11 @@
       </div>
       <!-- Bullet points - larger font -->
       <div class="multi-device-note" style="padding:14px 18px; border-radius:8px; background:rgba(52,211,153,0.06); border:1px solid rgba(52,211,153,0.15); width:100%;">
-        <div style="font-size:0.64em; color:var(--fg-secondary); line-height:1.7;">
-          <strong style="color:#166534;">Few boilerplate for heterogeneous computing:</strong><br/>
-          &#x2022; Kernel launch &mdash; compiler generates host dispatch<br/>
-          &#x2022; Type conversion &amp; alignments &mdash; handled automatically<br/>
-          &#x2022; Data partitioning &mdash; <code style="background:#ecfdf5; padding:1px 4px; border-radius:3px;">parallel-by mpi</code> splits work across ranks
+        <div style="font-size:0.70em; color:var(--fg-secondary); line-height:1.8;">
+          <strong style="font-size:1.04em; color:#166534;">Few boilerplate for heterogeneous computing:</strong><br/>
+          &#x2022; <strong style="color:var(--fg);">Kernel launch</strong> &mdash; compiler generates host dispatch<br/>
+          &#x2022; <strong style="color:var(--fg);">Type conversion &amp; alignments</strong> &mdash; handled automatically<br/>
+          &#x2022; <strong style="color:var(--fg);">Data partitioning</strong> &mdash; <code style="background:#ecfdf5; padding:1px 4px; border-radius:3px;">parallel-by mpi</code> splits work across ranks
         </div>
       </div>
     </div>
@@ -813,8 +809,8 @@
 
   <div class="era-split" data-era="cq-bench">
     <div class="era-left">
-      <div style="font-size:0.72em; color:var(--fg-secondary); line-height:1.6;">
-        Same AI agent, same hardware, same budget.<br>Only the <strong style="color:var(--fg);">language (DSL)</strong> changes.<br>Y-axis = running-best TFLOPS, dashed line = cuBLAS baseline.
+      <div style="font-size:0.80em; color:var(--fg-secondary); line-height:1.65;">
+        Same AI agent, same hardware, same budget.<br>Only the <strong style="color:var(--fg);">language (DSL)</strong> changes.
       </div>
       <div class="era-feature-tabs">
         <button class="era-tab active" data-target="cqb-f1"><span class="tab-icon">📐</span> matmul FP16 16384³</button>
@@ -823,7 +819,7 @@
         <button class="era-tab" data-target="cqb-f5"><span class="tab-icon">🔲</span> matmul 16416³</button>
       </div>
     </div>
-    <div class="era-right" style="border:1px solid #d7e2f0; background:linear-gradient(180deg, #fbfdff 0%, #f1f6ff 100%); border-radius:12px;">
+    <div class="era-right" style="border:1px solid #d7e2f0; background:linear-gradient(180deg, #fbfdff 0%, #f1f6ff 100%); border-radius:12px; display:flex; flex-direction:column; padding-bottom:12px;">
       <!-- Tab 1: matmul -->
       <div class="era-feature-panel active" id="cqb-f1">
         <div class="cq-panel" style="gap:10px;">
@@ -944,6 +940,9 @@
           <div style="font-size:0.72em; color:#6b7280; text-align:center;">cuBLAS baseline: 413 TFLOPS · non-power-of-2 shape (ongoing tuning)</div>
         </div>
       </div>
+      <div style="font-size:0.75em; color:#6b7280; text-align:center; line-height:1.45; padding:0 18px;">
+        Y-axis = running-best TFLOPS, dashed line = cuBLAS baseline.
+      </div>
     </div>
   </div>
 
@@ -967,7 +966,7 @@
 
   <div class="era-split" data-era="spmm-perf" style="max-width:920px; margin:14px auto 0;">
     <div class="era-left">
-      <div style="font-size:0.68em; color:var(--fg-secondary); line-height:1.5; margin-bottom:4px;">
+      <div style="font-size:0.79em; color:var(--fg-secondary); line-height:1.55; margin-bottom:4px;">
         CroqTile AI-tuned <strong style="color:var(--mint-700);">wins 84%</strong> of 95 shapes.<br>
         Average speedup <strong style="color:var(--mint-700);">+16.7%</strong> over cuSPARSELt.
       </div>
@@ -1022,15 +1021,17 @@
     <span class="footer-right">github.com/croqtile</span>
   </div>
   <h2>Why CroqTile Fits AI Tuning</h2>
-  <div class="agg-tabs" style="margin-bottom:12px;">
-    <button class="agg-tab active" data-panel="fit-token">Lowest Token Footprint</button>
-    <button class="agg-tab" data-panel="fit-decouple">Less Sites for Code Change</button>
-    <button class="agg-tab" data-panel="fit-compiler">Compiler Message as Guardrail</button>
-  </div>
+  <div class="agg-layout">
+    <div class="agg-tabs">
+      <button class="agg-tab active" data-panel="fit-token">Lowest Token Footprint</button>
+      <button class="agg-tab" data-panel="fit-decouple">Less Sites for Code Change</button>
+      <button class="agg-tab" data-panel="fit-compiler">Compiler Message as Guardrail</button>
+    </div>
+    <div class="agg-content">
 
   <!-- Tab 1: Token Footprint (vertical, centered) -->
   <div class="agg-panel active" id="fit-token">
-    <div style="max-width:720px; margin:0 auto; display:flex; flex-direction:column; gap:12px;">
+    <div style="max-width:100%; margin:0; display:flex; flex-direction:column; gap:12px;">
       <div style="padding:12px 16px; border-radius:10px; background:linear-gradient(180deg,#ffffff 0%,#ecfdf5 100%); border:1.5px solid #22c55e;">
         <div style="font-size:0.52em; font-weight:700; color:#166534; margin-bottom:8px;">Same persistent warp-specialized GEMM &mdash; measured token count</div>
         <div style="display:grid; grid-template-columns:110px 1fr auto; gap:5px 10px; font-size:0.48em; line-height:1.8; align-items:center;">
@@ -1076,7 +1077,7 @@
 
   <!-- Tab 2: Less Sites for Code Change (vertical, centered) -->
   <div class="agg-panel" id="fit-decouple">
-    <div style="max-width:680px; margin:0 auto; display:flex; flex-direction:column; gap:12px;">
+    <div style="max-width:100%; margin:0; display:flex; flex-direction:column; gap:12px;">
       <div style="padding:12px 16px; border-radius:10px; background:linear-gradient(180deg,#ffffff 0%,#ecfdf5 100%); border:1.5px solid #22c55e;">
         <div style="font-size:0.52em; font-weight:700; color:#166534; margin-bottom:6px;">CroqTile: the same DMA transfer = 1 line of code &amp; the compiler generates the barrier</div>
         <div style="font-size:0.48em; line-height:2.0; color:var(--fg-secondary);">
@@ -1128,7 +1129,7 @@
 
   <!-- Tab 3: Compiler Message as Guardrail (vertical, centered, with CUDA contrast) -->
   <div class="agg-panel" id="fit-compiler">
-    <div style="max-width:750px; margin:0 auto; display:flex; flex-direction:column; gap:12px;">
+    <div style="max-width:100%; margin:0; display:flex; flex-direction:column; gap:12px;">
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
         <div style="padding:10px 12px; border-radius:10px; background:linear-gradient(180deg,#ffffff 0%,#fef2f2 100%); border:1.5px solid #ef4444;">
           <div style="font-size:0.50em; font-weight:800; color:#ef4444; margin-bottom:6px;">CUDA: errors appear only at runtime</div>
@@ -1181,13 +1182,18 @@
       </div>
     </div>
   </div>
+    </div>
+  </div>
 
   <style>
-    #why-ai-fit .agg-tabs{display:flex;gap:6px;margin-bottom:10px;padding:5px;background:#eef1ef;border-radius:12px;}
-    #why-ai-fit .agg-tab{padding:7px 16px;font-size:0.72em;font-weight:600;letter-spacing:0.01em;border:none;border-radius:8px;cursor:pointer;background:transparent !important;color:#777 !important;transition:all .25s cubic-bezier(.4,0,.2,1);}
-    #why-ai-fit .agg-tab.active{background:#ffffff !important;color:#222 !important;font-weight:700;box-shadow:0 1px 6px rgba(0,0,0,0.1),0 1px 2px rgba(0,0,0,0.06);}
-    #why-ai-fit .agg-tab:hover:not(.active){background:rgba(255,255,255,0.6) !important;color:#333 !important;}
-    #why-ai-fit .agg-panel{display:none;transform:scale(1.3);transform-origin:top center;}
+    #why-ai-fit .agg-layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:18px;align-items:start;}
+    #why-ai-fit .agg-tabs{display:flex;flex-direction:column;gap:10px;padding:12px;background:linear-gradient(180deg,#f8fbf9 0%,#eef7f0 100%);border:1px solid #d7e2f0;border-radius:16px;}
+    #why-ai-fit .agg-content{min-width:0;font-size:1.14em;}
+    #why-ai-fit .agg-tab{padding:12px 14px;font-size:0.80em;font-family:var(--title-font);font-weight:700;line-height:1.2;letter-spacing:0.01em;border:1px solid transparent;border-radius:12px;cursor:pointer;background:rgba(255,255,255,0.55) !important;color:#4b5563 !important;text-align:left;transition:all .25s cubic-bezier(.4,0,.2,1);}
+    #why-ai-fit .agg-tab.active{background:#ffffff !important;color:var(--mint-700) !important;border-color:rgba(34,197,94,0.16);box-shadow:0 1px 8px rgba(15,23,42,0.08),0 1px 2px rgba(15,23,42,0.05);}
+    #why-ai-fit .agg-tab:hover:not(.active){background:rgba(255,255,255,0.86) !important;color:#1f2937 !important;}
+    #why-ai-fit .agg-panel > div{max-width:100% !important;margin:0 !important;}
+    #why-ai-fit .agg-panel{display:none;}
     #why-ai-fit .agg-panel.active{display:block;}
   </style>
   <script>
@@ -1236,6 +1242,13 @@
 
 </div><!-- .slides -->
 </div><!-- .reveal -->
+
+<script>
+  document.querySelectorAll('.slide-footer .footer-right').forEach(function(el) {
+    if (el.querySelector('a')) return;
+    el.innerHTML = '<a href="https://github.com/LancerLab/croqtile/" target="_blank" rel="noopener noreferrer">github.com/LancerLab/croqtile</a>';
+  });
+</script>
 
 <script src="../../node_modules/reveal.js/dist/reveal.js"></script>
 <script src="../../node_modules/reveal.js/dist/plugin/notes.js"></script>

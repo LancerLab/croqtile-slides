@@ -179,7 +179,7 @@
 
 .slide-header .header-title {
   font-family: var(--ui-font);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   color: #ffffff;
   letter-spacing: 0.03em;
@@ -187,13 +187,13 @@
 
 .slide-header .header-sep {
   color: rgba(255,255,255,0.5);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .slide-header .header-section {
   font-family: var(--ui-font);
-  font-size: 11px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 600;
   color: rgba(255,255,255,0.9);
   margin-left: auto;
 }
@@ -223,7 +223,7 @@
 
 .slide-footer .footer-brand {
   font-family: var(--ui-font);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   color: rgba(255,255,255,0.9);
   letter-spacing: 0.04em;
@@ -232,9 +232,19 @@
 .slide-footer .footer-right {
   margin-left: auto;
   font-family: var(--ui-font);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   color: rgba(255,255,255,0.85);
+}
+
+.slide-footer .footer-right a {
+  color: inherit;
+  text-decoration: none;
+  font-style: italic;
+}
+
+.slide-footer .footer-right a:hover {
+  text-decoration: underline;
 }
 
 /* Lead / chapter slides hide header+footer bars */
@@ -1027,11 +1037,15 @@
 }
 
 .write-once-slide .write-once-layout {
-  gap: 44px;
+  display: grid;
+  grid-template-columns: minmax(0, 340px) minmax(0, 1fr);
+  gap: 32px;
+  align-items: center;
+  margin-top: 18px;
 }
 
 .write-once-slide .write-once-code {
-  flex: 0 0 340px;
+  min-width: 340px;
   max-width: 340px;
 }
 
@@ -1039,8 +1053,32 @@
   max-width: 100%;
 }
 
-.write-once-slide .write-once-targets {
-  gap: 16px;
+.write-once-slide .write-once-route-grid {
+  display: grid;
+  grid-template-columns: auto minmax(220px, 1fr);
+  gap: 16px 18px;
+  align-items: center;
+}
+
+.write-once-slide .write-once-route {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.write-once-slide .write-once-arrow {
+  font-size: 1.2em;
+  font-weight: 700;
+}
+
+.write-once-slide .write-once-myth {
+  margin: 20px auto 0;
+  max-width: 760px;
+  text-align: center;
+  font-size: 0.68em;
+  line-height: 1.5;
+  color: var(--fg-secondary);
 }
 
 .multi-device-slide {
