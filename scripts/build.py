@@ -1,12 +1,14 @@
 """Build reveal.js slide decks into self-contained HTML and PDF."""
 
 import base64
+import json
 import mimetypes
 import re
 import subprocess
 import sys
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
+from urllib.request import urlopen
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DECKS_DIR = REPO_ROOT / "decks"
@@ -28,21 +30,37 @@ def resolve_local_path(href: str, base_dir: Path) -> Path | None:
             return None
     if parsed.scheme == "data":
         return None
-    resolved = (base_dir / href).resolve()
+    resolved = (base_dir / unquote(href)).resolve()
     if resolved.exists():
         return resolved
     return None
 
 
-def inline_css_file(css_path: Path, base_dir: Path) -> str:
+def inline_css_file(css_path: Path, base_dir: Path, remote_cache: dict[str, str]) -> str:
     """Read a CSS file and inline any url() references."""
     css = css_path.read_text(encoding="utf-8")
     css_dir = css_path.parent
 
     def replace_url(m):
         url = m.group(1).strip("'\"")
-        if url.startswith("data:") or url.startswith("http"):
+        if url.startswith("data:"):
             return m.group(0)
+        if url.startswith("http"):
+            data_url = remote_cache.get(url)
+            if data_url is None:
+                try:
+                    with urlopen(url) as response:
+                        payload = response.read()
+                        mime = response.headers.get_content_type()
+                except Exception as exc:
+                    print(f"  WARN: failed to inline {url}: {exc}")
+                    return m.group(0)
+                if mime == "application/octet-stream":
+                    mime = mimetypes.guess_type(urlparse(url).path)[0] or mime
+                data = base64.b64encode(payload).decode()
+                data_url = f'data:{mime};base64,{data}'
+                remote_cache[url] = data_url
+            return f'url("{data_url}")'
         local = resolve_local_path(url, css_dir)
         if local and local.exists():
             mime = mimetypes.guess_type(str(local))[0] or "application/octet-stream"
@@ -58,13 +76,16 @@ def build_self_contained_html(deck_path: Path, output_path: Path):
     """Bundle a reveal.js deck into a single self-contained HTML file."""
     html = deck_path.read_text(encoding="utf-8")
     base_dir = deck_path.parent
+    remote_cache: dict[str, str] = {}
+    inline_images: dict[str, str] = {}
+    image_keys: dict[Path, str] = {}
 
     # Inline <link rel="stylesheet" href="...">
     def replace_link(m):
         href = m.group(1)
         local = resolve_local_path(href, base_dir)
         if local:
-            css = inline_css_file(local, base_dir)
+            css = inline_css_file(local, base_dir, remote_cache)
             return f"<style>\n{css}\n</style>"
         return m.group(0)
 
@@ -95,14 +116,34 @@ def build_self_contained_html(deck_path: Path, output_path: Path):
         src = m.group(1)
         local = resolve_local_path(src, base_dir)
         if local:
-            mime = mimetypes.guess_type(str(local))[0] or "image/png"
-            if local.suffix == ".svg":
-                mime = "image/svg+xml"
-            data = base64.b64encode(local.read_bytes()).decode()
-            return full.replace(f'src="{src}"', f'src="data:{mime};base64,{data}"')
+            key = image_keys.get(local)
+            if key is None:
+                key = f"img_{len(image_keys)}"
+                image_keys[local] = key
+                mime = mimetypes.guess_type(str(local))[0] or "image/png"
+                if local.suffix == ".svg":
+                    mime = "image/svg+xml"
+                data = base64.b64encode(local.read_bytes()).decode()
+                inline_images[key] = f"data:{mime};base64,{data}"
+            return full.replace(f'src="{src}"', f'data-inline-image="{key}"')
         return full
 
     html = re.sub(r'<img\s[^>]*src="([^"]+)"[^>]*>', replace_img, html)
+
+    if inline_images:
+        image_loader = (
+            "<script>\n"
+            f"const INLINE_IMAGES = {json.dumps(inline_images, separators=(',', ':'))};\n"
+            "document.querySelectorAll('img[data-inline-image]').forEach((img) => {\n"
+            "  const key = img.getAttribute('data-inline-image');\n"
+            "  if (INLINE_IMAGES[key]) {\n"
+            "    img.src = INLINE_IMAGES[key];\n"
+            "  }\n"
+            "  img.removeAttribute('data-inline-image');\n"
+            "});\n"
+            "</script>"
+        )
+        html = html.replace("</body>", f"{image_loader}\n</body>")
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(html, encoding="utf-8")
