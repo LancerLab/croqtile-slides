@@ -28,27 +28,46 @@
 </section>
 
 <!-- ═══════════════════════════════════════════════════════ -->
-<!-- SLIDE 2: Table of Contents                             -->
+<!-- SLIDE 2: CroqTile Video Introduction                   -->
 <!-- ═══════════════════════════════════════════════════════ -->
-<section>
-  <div class="slide-header">
-    <img src="../../assets/images/logo%202%20new.png" alt="">
-    <span class="header-title">CroqTile</span>
-    <span class="header-sep">|</span>
-    <span class="header-section">Table of Contents</span>
+<section data-background-color="#000" style="padding:0;margin:0;top:0;left:0;width:1280px;height:720px;">
+  <style>
+    #cq-replay-btn{position:absolute;top:20px;right:20px;z-index:12;width:48px;height:48px;border-radius:50%;
+      border:2px solid rgba(255,255,255,0.5);background:rgba(0,0,0,0.5);cursor:pointer;display:flex;
+      align-items:center;justify-content:center;transition:all 0.2s;opacity:0.7;}
+    #cq-replay-btn:hover{opacity:1;border-color:#22c55e;background:rgba(34,197,94,0.2);}
+    #cq-replay-btn svg{width:22px;height:22px;fill:#fff;}
+    #cq-replay-btn:hover svg{fill:#22c55e;}
+    #cq-video-ended{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+      flex-direction:column;gap:16px;background:rgba(0,0,0,0.75);cursor:pointer;z-index:11;}
+    #cq-video-ended:hover .ended-circle{background:rgba(34,197,94,0.2);}
+    .ended-circle{width:100px;height:100px;border-radius:50%;border:3px solid #22c55e;
+      display:flex;align-items:center;justify-content:center;transition:background 0.2s;}
+    .ended-play{width:0;height:0;border-top:22px solid transparent;border-bottom:22px solid transparent;
+      border-left:36px solid #22c55e;margin-left:8px;}
+  </style>
+  <div style="position:relative;width:1280px;height:720px;">
+    <video id="cq-intro-video" controls style="position:absolute;inset:0;width:1280px;height:720px;object-fit:contain;z-index:1;">
+      <source src="../../assets/videos/croqtile-intro.mp4" type="video/mp4">
+    </video>
+    <div id="cq-video-overlay" onclick="this.style.display='none';document.getElementById('cq-intro-video').play();"
+         style="position:absolute;inset:0;width:1280px;height:720px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);cursor:pointer;z-index:10;">
+      <span style="font-family:var(--title-font);font-size:3em;font-weight:700;color:#fff;letter-spacing:0.02em;text-shadow:0 0 40px rgba(34,197,94,0.4);">CroqTile Intro Video</span>
+    </div>
+    <div id="cq-replay-btn" onclick="var v=document.getElementById('cq-intro-video');v.currentTime=0;v.play();document.getElementById('cq-video-ended').style.display='none';"
+         title="Replay">
+      <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+    </div>
+    <div id="cq-video-ended" onclick="var v=document.getElementById('cq-intro-video');v.currentTime=0;v.play();this.style.display='none';">
+      <div class="ended-circle"><div class="ended-play"></div></div>
+      <span style="color:#fff;font-size:1.1em;font-weight:500;">Replay</span>
+    </div>
   </div>
-  <div class="slide-footer">
-    <span class="footer-brand">CroqTile — The Next-Gen GPU &amp; DSA Language</span>
-    <span class="footer-right">github.com/croqtile</span>
-  </div>
-  <h2>Contents</h2>
-  <ul class="toc-list">
-    <li><a href="#/2"><span class="toc-num"></span><span class="toc-title">What is CroqTile?</span></a></li>
-    <li><a href="#/3"><span class="toc-num">01</span><span class="toc-title">Highlight 1: Simplicity + Performance</span></a></li>
-    <li><a href="#/12"><span class="toc-num">02</span><span class="toc-title">Highlight 2: Compile-Time Code Safety</span></a></li>
-    <li><a href="#/15"><span class="toc-num">03</span><span class="toc-title">Highlight 3: Support for Heterogeneous Computing</span></a></li>
-    <li><a href="#/18"><span class="toc-num">04</span><span class="toc-title">Highlight 4: Born for Agentic AI Programming</span></a></li>
-  </ul>
+  <script>
+    document.getElementById('cq-intro-video').addEventListener('ended', function(){
+      document.getElementById('cq-video-ended').style.display='flex';
+    });
+  </script>
 </section>
 
 <!-- ═══════════════════════════════════════════════════════ -->
@@ -93,7 +112,130 @@
 </section>
 
 <!-- ═══════════════════════════════════════════════════════ -->
-<!-- SLIDE 5: Simplicity + Performance — website-style layout -->
+<!-- SLIDE 5: GPU MatMul — Dataflow + Raw CUDA Code          -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section>
+  <div class="slide-header">
+    <img src="../../assets/images/logo%202%20new.png" alt="">
+    <span class="header-title">CroqTile</span>
+    <span class="header-sep">|</span>
+    <span class="header-section">Chapter 1 — GPU MatMul Anatomy</span>
+  </div>
+  <div class="slide-footer">
+    <span class="footer-brand">CroqTile — The Next-Gen GPU &amp; DSA Language</span>
+    <span class="footer-right">github.com/croqtile</span>
+  </div>
+  <h2 style="font-size:1.1em;margin-bottom:0.1em;">How does Tiled MatMul work on GPU?</h2>
+  <div style="display:grid;grid-template-columns:0.55fr 0.45fr;gap:16px;align-items:start;">
+    <!-- Left: Visual intuitive tiling illustration -->
+    <div>
+      <svg viewBox="0 0 500 500" style="width:100%;height:auto;font-family:var(--body-font);">
+        <!-- Matrix A — grid of colored cells -->
+        <text x="78" y="18" text-anchor="middle" font-size="14" font-weight="700" fill="#1a1a1a">A</text>
+        <text x="78" y="32" text-anchor="middle" font-size="9" fill="#666">M rows, K cols</text>
+        <g transform="translate(8,38)">
+          <!-- Full grid background -->
+          <rect width="140" height="140" rx="3" fill="#e8f5e9" stroke="#a5d6a7" stroke-width="1"/>
+          <!-- Grid lines -->
+          <line x1="35" y1="0" x2="35" y2="140" stroke="#c8e6c9" stroke-width="0.5"/><line x1="70" y1="0" x2="70" y2="140" stroke="#c8e6c9" stroke-width="0.5"/><line x1="105" y1="0" x2="105" y2="140" stroke="#c8e6c9" stroke-width="0.5"/>
+          <line x1="0" y1="35" x2="140" y2="35" stroke="#c8e6c9" stroke-width="0.5"/><line x1="0" y1="70" x2="140" y2="70" stroke="#c8e6c9" stroke-width="0.5"/><line x1="0" y1="105" x2="140" y2="105" stroke="#c8e6c9" stroke-width="0.5"/>
+          <!-- Highlighted tile row (block_m) -->
+          <rect x="0" y="35" width="35" height="35" fill="#22c55e" opacity="0.5" rx="2"/>
+          <rect x="35" y="35" width="35" height="35" fill="#4ade80" opacity="0.35" rx="2"/>
+          <rect x="70" y="35" width="35" height="35" fill="#86efac" opacity="0.25" rx="2"/>
+          <rect x="105" y="35" width="35" height="35" fill="#bbf7d0" opacity="0.2" rx="2"/>
+          <!-- Active tile highlight -->
+          <rect x="0" y="35" width="35" height="35" fill="none" stroke="#15803d" stroke-width="2.5" rx="2"/>
+          <text x="17" y="57" text-anchor="middle" font-size="8" font-weight="700" fill="#052e14">tile</text>
+        </g>
+        <!-- Brace: TILE_M -->
+        <text x="4" y="95" text-anchor="middle" font-size="8" fill="#15803d" transform="rotate(-90,4,95)">TILE_M</text>
+        <!-- K arrow -->
+        <line x1="8" y1="184" x2="148" y2="184" stroke="#666" stroke-width="0.8" marker-end="url(#k-arrow)"/>
+        <text x="78" y="196" text-anchor="middle" font-size="8" fill="#666">slide along K &rarr;</text>
+
+        <!-- Matrix B — grid of colored cells -->
+        <text x="280" y="18" text-anchor="middle" font-size="14" font-weight="700" fill="#1a1a1a">B</text>
+        <text x="280" y="32" text-anchor="middle" font-size="9" fill="#666">K rows, N cols</text>
+        <g transform="translate(210,38)">
+          <rect width="140" height="140" rx="3" fill="#e3f2fd" stroke="#90caf9" stroke-width="1"/>
+          <line x1="35" y1="0" x2="35" y2="140" stroke="#bbdefb" stroke-width="0.5"/><line x1="70" y1="0" x2="70" y2="140" stroke="#bbdefb" stroke-width="0.5"/><line x1="105" y1="0" x2="105" y2="140" stroke="#bbdefb" stroke-width="0.5"/>
+          <line x1="0" y1="35" x2="140" y2="35" stroke="#bbdefb" stroke-width="0.5"/><line x1="0" y1="70" x2="140" y2="70" stroke="#bbdefb" stroke-width="0.5"/><line x1="0" y1="105" x2="140" y2="105" stroke="#bbdefb" stroke-width="0.5"/>
+          <!-- Highlighted tile column (block_n) -->
+          <rect x="35" y="0" width="35" height="35" fill="#42a5f5" opacity="0.4" rx="2"/>
+          <rect x="35" y="35" width="35" height="35" fill="#64b5f6" opacity="0.3" rx="2"/>
+          <rect x="35" y="70" width="35" height="35" fill="#90caf9" opacity="0.25" rx="2"/>
+          <rect x="35" y="105" width="35" height="35" fill="#bbdefb" opacity="0.2" rx="2"/>
+          <!-- Active tile -->
+          <rect x="35" y="0" width="35" height="35" fill="none" stroke="#1565c0" stroke-width="2.5" rx="2"/>
+          <text x="52" y="22" text-anchor="middle" font-size="8" font-weight="700" fill="#0d47a1">tile</text>
+        </g>
+
+        <!-- Multiply symbol -->
+        <text x="180" y="110" text-anchor="middle" font-size="22" font-weight="700" fill="#9e9e9e">&times;</text>
+
+        <!-- Equals symbol -->
+        <text x="180" y="310" text-anchor="middle" font-size="22" font-weight="700" fill="#9e9e9e">=</text>
+
+        <!-- Result Matrix C -->
+        <text x="280" y="230" text-anchor="middle" font-size="14" font-weight="700" fill="#1a1a1a">C</text>
+        <text x="280" y="244" text-anchor="middle" font-size="9" fill="#666">M rows, N cols</text>
+        <g transform="translate(210,250)">
+          <rect width="140" height="140" rx="3" fill="#fafafa" stroke="#e0e0e0" stroke-width="1"/>
+          <line x1="35" y1="0" x2="35" y2="140" stroke="#eee" stroke-width="0.5"/><line x1="70" y1="0" x2="70" y2="140" stroke="#eee" stroke-width="0.5"/><line x1="105" y1="0" x2="105" y2="140" stroke="#eee" stroke-width="0.5"/>
+          <line x1="0" y1="35" x2="140" y2="35" stroke="#eee" stroke-width="0.5"/><line x1="0" y1="70" x2="140" y2="70" stroke="#eee" stroke-width="0.5"/><line x1="0" y1="105" x2="140" y2="105" stroke="#eee" stroke-width="0.5"/>
+          <!-- Result tile: intersection of green row & blue col -->
+          <rect x="35" y="35" width="35" height="35" fill="#f59e0b" opacity="0.4" stroke="#d97706" stroke-width="2" rx="2"/>
+          <text x="52" y="56" text-anchor="middle" font-size="7" font-weight="700" fill="#92400e">result</text>
+        </g>
+
+        <!-- Connecting lines: A-row → C-row, B-col → C-col -->
+        <path d="M 43 108 L 43 200 Q 43 225 68 235 L 210 285" fill="none" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.7"/>
+        <path d="M 262 178 L 262 200 Q 262 225 262 250" fill="none" stroke="#42a5f5" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.7"/>
+
+        <!-- Step annotations -->
+        <g transform="translate(8,220)">
+          <rect width="180" height="110" rx="8" fill="#fff8e1" stroke="#ffc107" stroke-width="1" opacity="0.9"/>
+          <text x="14" y="20" font-size="10" font-weight="700" fill="#e65100">How tiling works:</text>
+          <text x="14" y="38" font-size="9" fill="#4e342e">1. Split A into row-tiles</text>
+          <text x="14" y="52" font-size="9" fill="#4e342e">2. Split B into col-tiles</text>
+          <text x="14" y="66" font-size="9" fill="#4e342e">3. Load tile-pair to fast memory</text>
+          <text x="14" y="80" font-size="9" fill="#4e342e">4. Multiply &amp; accumulate</text>
+          <text x="14" y="94" font-size="9" fill="#4e342e">5. Slide along K, repeat</text>
+        </g>
+
+        <!-- GPU chip icon -->
+        <g transform="translate(400,60)">
+          <rect width="80" height="90" rx="6" fill="#f3e5f5" stroke="#ab47bc" stroke-width="1.2"/>
+          <text x="40" y="20" text-anchor="middle" font-size="9" font-weight="700" fill="#6a1b9a">GPU</text>
+          <rect x="8" y="28" width="28" height="14" rx="2" fill="#ce93d8" opacity="0.5"/>
+          <text x="22" y="39" text-anchor="middle" font-size="6" fill="#4a148c">SM</text>
+          <rect x="44" y="28" width="28" height="14" rx="2" fill="#ce93d8" opacity="0.5"/>
+          <text x="58" y="39" text-anchor="middle" font-size="6" fill="#4a148c">SM</text>
+          <rect x="8" y="48" width="28" height="14" rx="2" fill="#ce93d8" opacity="0.5"/>
+          <text x="22" y="59" text-anchor="middle" font-size="6" fill="#4a148c">SM</text>
+          <rect x="44" y="48" width="28" height="14" rx="2" fill="#ce93d8" opacity="0.5"/>
+          <text x="58" y="59" text-anchor="middle" font-size="6" fill="#4a148c">SM</text>
+          <text x="40" y="78" text-anchor="middle" font-size="7" fill="#7b1fa2">each SM = 1 tile</text>
+        </g>
+
+        <!-- Arrow markers -->
+        <defs>
+          <marker id="k-arrow" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto"><path d="M0,0 L6,2.5 L0,5" fill="#666"/></marker>
+        </defs>
+      </svg>
+    </div>
+    <!-- Right: CUDA Code via editor-showcase (narrower) -->
+    <div>
+      <div class="editor-showcase editor-compact" data-tabs='[
+        {"file":"matmul_wgmma_tma.cu","badge":"RAW CUDA","label":"~140 LOC — and this is simplified","lang":"cpp","code":"__global__ void gemm_kernel(\n    half* C,\n    const __grid_constant__\n      CUtensorMap tma_a,\n    const __grid_constant__\n      CUtensorMap tma_b,\n    int M, int N, int K) {\n  __shared__ __align__(128)\n    half smem_a[3][64][64];\n  __shared__ __align__(128)\n    half smem_b[3][64][128];\n  __shared__ __align__(128)\n    half smem_c[64][128];\n  __shared__ cuda::barrier<\n    cuda::thread_scope_block>\n      bar[3];\n  if (threadIdx.x == 0)\n    for (int s = 0; s < 3; s++)\n      init(&bar[s], blockDim.x);\n  __syncthreads();\n  float acc[4][8][8];\n  memset(acc, 0, sizeof(acc));\n  // TMA prefetch pipeline\n  for (int s = 0; s < 3; s++) {\n    if (threadIdx.x == 0) {\n      cuda::barrier_arrive_tx(\n        bar[s], 1, ...);\n      asm volatile(\n        \"cp.async.bulk.tensor.2d\"\n        \".shared.global\"\n        \".mbarrier::complete_tx\"\n        \"::bytes [%0],[%1,{%2,\"\n        \"%3}],[%4];\"\n        :: ...);\n    } else\n      cuda::barrier_arrive(\n        bar[s]);\n  }\n  // K-loop: WGMMA\n  for (int k = 0; k < nk; k++){\n    bar[k%3].arrive_and_wait();\n    for (int w = 0;\n         w < 64/16; w++)\n      asm volatile(\n        \"wgmma.mma_async.sync\"\n        \".aligned.m64n128k16\"\n        \".f32.f16.f16 \"\n        \"{%0..%63},\"\n        \"descA,descB,\"\n        \"p,1,1,0,1;\"\n        : \"=f\"(...) ...);\n  }\n  // Store via stmatrix + TMA\n  for (int i = 0; ...)\n    asm volatile(\n      \"stmatrix.sync.aligned\"\n      \".m8n8.x4.shared.b16\"\n      \" [%0],{%1..%4};\"\n      :: ...);\n  __syncthreads();\n  if (threadIdx.x == 0)\n    asm volatile(\n      \"cp.async.bulk.tensor.2d\"\n      \".global.shared::cta\"\n      \".bulk_group\"\n      \" [%0,{%1,%2}],[%3];\"\n      :: ...);\n}"}
+      ]'></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SLIDE 6: Simplicity + Performance — website-style layout -->
 <!-- ═══════════════════════════════════════════════════════ -->
 <section class="dense slide-five">
   <div class="slide-header">
